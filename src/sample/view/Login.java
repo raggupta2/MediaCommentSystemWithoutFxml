@@ -91,7 +91,7 @@ public class Login {
         mainPane.getChildren().add(labelLogin);
         mainPane.getChildren().add(inputPane);
         mainPane.getChildren().add(groupButton);
-  imageManagement = new ImageManagement(mainPane, new User("a", "b", 1));
+  //imageManagement = new ImageManagement(mainPane, new User("a", "b", 1));
 
         login.setOnMouseClicked(event -> {
             String name = textName.getText();

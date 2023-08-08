@@ -77,8 +77,8 @@ public class ImageManagement {
         loadingPane = new StackPane();
         try {
             ImageView i = new ImageView(new Image(new FileInputStream(Common.iconLoading)));
-            i.setFitWidth(250);
-            i.setFitHeight(250);
+            i.setFitWidth(200);
+            i.setFitHeight(200);
             rotateTransition = component.makeRotationOfImage(i);
             loadingPane.getChildren().add(i);
         } catch (FileNotFoundException e) {
