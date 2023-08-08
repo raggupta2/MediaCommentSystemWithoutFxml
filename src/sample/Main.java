@@ -10,6 +10,7 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import sample.controller.MediaController;
 import sample.view.Login;
 
 import java.io.FileInputStream;
@@ -22,11 +23,11 @@ public class Main extends Application {
 
         VBox root = new VBox();
         Login login = new Login(root);
-        primaryStage.setTitle("Image Comment System");
+        String version = "0.9.1";
+        primaryStage.setTitle("Image Comment System" + " " + version);
         Scene scene = new Scene(root, 800, 600);
         primaryStage.setScene(scene);
-        //   primaryStage.setFullScreen(true);
-    //    primaryStage.getIcons().add(new Image(new FileInputStream(Common.iconCamera)));
+        primaryStage.getIcons().add(new Image(new FileInputStream(Common.iconCamera)));
         primaryStage.show();
     }
 

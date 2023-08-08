@@ -11,8 +11,8 @@ public class MediaInformation {
     private String latitude;
     private String longitude;
     private String googleMapUrl;
-    private Date modificationTime;
-    private Date takenTime;
+    private String modificationTime;
+    private String takenTime;
     private double originalFileSize;
     private double currentFileSize;
     private String modifier;
@@ -22,7 +22,7 @@ public class MediaInformation {
     public MediaInformation() {
     }
 
-    public MediaInformation(String name, String extension, String location, String description, String latitude, String longitude, String googleMapUrl, Date modificationTime, Date takenTime, double originalFileSize, double currentFileSize, String modifier, String checkSum, int qualityRating) {
+    public MediaInformation(String name, String extension, String location, String description, String latitude, String longitude, String googleMapUrl, String modificationTime, String takenTime, double originalFileSize, double currentFileSize, String modifier, String checkSum, int qualityRating) {
         this.name = name;
         this.extension = extension;
         this.location = location;
@@ -95,19 +95,19 @@ public class MediaInformation {
         this.googleMapUrl = googleMapUrl;
     }
 
-    public Date getModificationTime() {
+    public String getModificationTime() {
         return modificationTime;
     }
 
-    public void setModificationTime(Date modificationTime) {
+    public void setModificationTime(String modificationTime) {
         this.modificationTime = modificationTime;
     }
 
-    public Date getTakenTime() {
+    public String getTakenTime() {
         return takenTime;
     }
 
-    public void setTakenTime(Date takenTime) {
+    public void setTakenTime(String takenTime) {
         this.takenTime = takenTime;
     }
 

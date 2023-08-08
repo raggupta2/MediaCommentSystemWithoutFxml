@@ -1,55 +1,47 @@
 package sample.view;
 
-import javafx.animation.Animation;
-import javafx.animation.Interpolator;
-import javafx.animation.RotateTransition;
-import javafx.application.Platform;
-import javafx.concurrent.Service;
-import javafx.concurrent.Task;
 import javafx.event.Event;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.geometry.VPos;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import javafx.util.Duration;
+import magick.ImageInfo;
+import magick.MagickException;
+import magick.MagickImage;
 import sample.Common;
 import sample.controller.FileController;
 import sample.controller.MediaController;
-import sample.controller.UserController;
 import sample.model.MediaInformation;
 import sample.model.User;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
-import java.util.concurrent.CountDownLatch;
+import java.util.logging.Logger;
 
 public class ImageManagement {
 
     private final Component component;
 
     private final VBox mainPane;
-    private HBox controlPane;
     private HBox listAndDetailPane;
     private VBox listPane;
     private VBox detailPane;
+    private ImageView imageView;
     private final MediaController mediaController;
 
     private Button open;
@@ -60,7 +52,7 @@ public class ImageManagement {
 
     private Button back;
     private Button next;
-    private Text locationView;
+    private TextField locationView;
     private ListView listView;
 
     private TextField lastModifier;
@@ -71,12 +63,10 @@ public class ImageManagement {
     private TextField currentFileSize;
     private TextField checksum;
     private TextArea description;
-    private ImageView imageView;
-
     private final User currentUser;
     private String openedLocation;
     private int openedLocationIndex = -1;
-    private MediaInformation selectedFile;
+    private MediaInformation selectedInfo;
     private String selectedSortType;
 
 
@@ -89,7 +79,7 @@ public class ImageManagement {
         mainPane.setAlignment(Pos.TOP_CENTER);
         drawMediaManagement();
 
-     /*   openedLocation = "F:\\z---exam";
+      /*  openedLocation = "F:\\z---exam";
         updateList(openedLocation);*/
     }
 
@@ -110,6 +100,7 @@ public class ImageManagement {
         drawListPane();
         drawDetailPane();
     }
+
 
     /**
      * draw menu
@@ -143,8 +134,18 @@ public class ImageManagement {
         about.setOnAction(event -> {
             Stage stage = new Stage();
             VBox vBox = new VBox();
-            vBox.setAlignment(Pos.CENTER);
-            vBox.getChildren().add(new Label(Common.aboutString));
+            vBox.setPadding(new Insets(20, 0, 0, 30));
+
+            Label title = new Label("Media Comment System");
+            Label content = new Label("Runtime version : 17.0.3.1");
+            Label footer = new Label("Built on August 2023");
+
+            title.setFont(new Font(20));
+
+            vBox.getChildren().add(title);
+            vBox.getChildren().add(content);
+            vBox.getChildren().add(footer);
+
             stage.setTitle("About");
             stage.setScene(new Scene(vBox, 300, 200));
             stage.show();
@@ -155,9 +156,44 @@ public class ImageManagement {
      * draw control part of media management
      */
     private void drawControlPane() {
-        controlPane = new HBox();
-        controlPane.setAlignment(Pos.CENTER);
+        HBox locationPane = new HBox();
+        locationView = new TextField("");
+        locationView.setFont(new Font(12));
+        locationView.setStyle("-fx-text-fill: rgb(0, 0, 0)");
+        locationView.setEditable(false);
+        //    locationView.setStyle("-fx-background-color: transparent");
+
+        back = component.drawImageButton(locationPane, Common.iconBack);
+        next = component.drawImageButton(locationPane, Common.iconNext);
+        StackPane stackPane = new StackPane();
+        HBox.setHgrow(stackPane, Priority.ALWAYS);
+        stackPane.setPadding(new Insets(0, 0, 0, 10));
+        stackPane.getChildren().add(locationView);
+        locationPane.getChildren().add(stackPane);
+        back.setDisable(true);
+        next.setDisable(true);
+        back.setOnMouseClicked(event -> {
+            openedLocationIndex--;
+            if (openedLocationIndex <= 0) {
+                back.setDisable(true);
+            }
+            next.setDisable(false);
+            openedLocation = mediaController.getLocations().get(openedLocationIndex);
+            updateList(openedLocation);
+        });
+        next.setOnMouseClicked(event -> {
+            openedLocationIndex++;
+            if (openedLocationIndex >= mediaController.getLocations().size() - 1) {
+                next.setDisable(true);
+            }
+            back.setDisable(false);
+            openedLocation = mediaController.getLocations().get(openedLocationIndex);
+            updateList(openedLocation);
+        });
+
+        HBox controlPane = new HBox();
         controlPane.setSpacing(10);
+        controlPane.setAlignment(Pos.CENTER_LEFT);
         open = component.drawButton(controlPane, "Open");
 
         sort = new ComboBox<>();
@@ -184,24 +220,25 @@ public class ImageManagement {
         createRepo.setOnMouseClicked(event -> {
             boolean isCreated = mediaController.createRepo(openedLocation);
             if (isCreated) {
-                createRepo.setDisable(mediaController.existICS(openedLocation));
+                createRepo.setDisable(mediaController.getSplitLocationByIcs(openedLocation) != null);
+                saveMetaData.setDisable(mediaController.getSplitLocationByIcs(openedLocation) == null);
             }
         });
 
         delMetaData.setOnMouseClicked(event -> {
-            boolean isDeleted = mediaController.deleteMetadata(selectedFile);
+            boolean isDeleted = mediaController.deleteMetadata(selectedInfo);
             if (isDeleted) {
                 updateList(openedLocation);
             }
         });
 
         saveMetaData.setOnMouseClicked(event -> {
-            selectedFile.setModifier(currentUser.getName());
-            selectedFile.setModificationTime(new Date());
-            selectedFile.setDescription(description.getText());
-            selectedFile.setLatitude(latitude.getText());
-            selectedFile.setLongitude(longitude.getText());
-            boolean isSaved = mediaController.saveMetadata(selectedFile);
+            selectedInfo.setModifier(currentUser.getName());
+            selectedInfo.setModificationTime(new Date().toString());
+            selectedInfo.setDescription(description.getText());
+            selectedInfo.setLatitude(latitude.getText());
+            selectedInfo.setLongitude(longitude.getText());
+            boolean isSaved = mediaController.saveMetadata(selectedInfo);
             if (isSaved) {
                 updateList(openedLocation);
             }
@@ -211,7 +248,11 @@ public class ImageManagement {
             selectedSortType = sort.getValue();
             updateList(openedLocation);
         });
-        mainPane.getChildren().add(controlPane);
+        VBox vBox = new VBox();
+        vBox.setPadding(new Insets(0, 20, 0, 20));
+        vBox.setSpacing(10);
+        vBox.getChildren().addAll(locationPane, controlPane);
+        mainPane.getChildren().add(vBox);
     }
 
     private void open(Event event) {
@@ -238,43 +279,15 @@ public class ImageManagement {
         listAndDetailPane.setSpacing(20);
         mainPane.getChildren().add(listAndDetailPane);
 
-        listPane.setSpacing(5);
-        HBox locationPane = new HBox();
-        locationView = new Text("");
-        back = component.drawImageButton(locationPane, Common.iconBack);
-        next = component.drawImageButton(locationPane, Common.iconNext);
-        StackPane stackPane = new StackPane();
-        stackPane.setPadding(new Insets(0, 0, 0, 10));
-        stackPane.getChildren().add(locationView);
-        locationPane.getChildren().add(stackPane);
-        back.setDisable(true);
-        next.setDisable(true);
-        back.setOnMouseClicked(event -> {
-            openedLocationIndex--;
-            if (openedLocationIndex <= 0) {
-                back.setDisable(true);
-            }
-            next.setDisable(false);
-            openedLocation = mediaController.getLocations().get(openedLocationIndex);
-            updateList(openedLocation);
-        });
-        next.setOnMouseClicked(event -> {
-            openedLocationIndex++;
-            if (openedLocationIndex >= mediaController.getLocations().size() - 1) {
-                next.setDisable(true);
-            }
-            back.setDisable(false);
-            openedLocation = mediaController.getLocations().get(openedLocationIndex);
-            updateList(openedLocation);
-        });
         listView = new ListView<>();
-        listPane.getChildren().add(locationPane);
         listPane.getChildren().add(listView);
 
 
-
-        locationView.setFont(new Font(12));
-        locationView.setFill(Color.rgb(0, 0, 0));
+        HBox.setHgrow(listPane, Priority.ALWAYS);
+        listView.setMaxWidth(Double.MAX_VALUE);
+        listPane.setMaxWidth(300);
+        listView.setPrefHeight(10000);
+        listAndDetailPane.setPadding(new Insets(0, 20, 20, 20));
     }
 
     /**
@@ -285,31 +298,34 @@ public class ImageManagement {
         listAndDetailPane.getChildren().add(detailPane);
 
         detailPane.setSpacing(10);
-        HBox topPane = new HBox();
+        HBox topBox = new HBox();
         GridPane topLeftPane = new GridPane();
 
-        topPane.setSpacing(20);
+        topBox.setSpacing(20);
         topLeftPane.setVgap(10);
         topLeftPane.setHgap(10);
 
-        lastModifier = component.drawTextAndTextfield(topLeftPane, "Last Modifier : ", "");
-        latitude = component.drawTextAndTextfield(topLeftPane, "Latitude : ", "");
-        longitude = component.drawTextAndTextfield(topLeftPane, "Longitude : ", "");
-        latitude.setEditable(true);
-        longitude.setEditable(true);
-        googleMapUrl = component.drawTextAndTextfield(topLeftPane, "Google map url : ", "");
-        originalFileSize = component.drawTextAndTextfield(topLeftPane, "Original Size : ", "");
-        currentFileSize = component.drawTextAndTextfield(topLeftPane, "Current Size : ", "");
-        checksum = component.drawTextAndTextfield(topLeftPane, "Checksum : ", "");
+        lastModifier = component.drawTextAndTextfield(topLeftPane, "Last Modifier : ", "", false);
+        latitude = component.drawTextAndTextfield(topLeftPane, "Latitude : ", "", true);
+        longitude = component.drawTextAndTextfield(topLeftPane, "Longitude : ", "", true);
+        googleMapUrl = component.drawTextAndTextfield(topLeftPane, "Google map url : ", "", false);
+        originalFileSize = component.drawTextAndTextfield(topLeftPane, "Original Size : ", "", false);
+        currentFileSize = component.drawTextAndTextfield(topLeftPane, "Current Size : ", "", false);
+        checksum = component.drawTextAndTextfield(topLeftPane, "Checksum : ", "", false);
         imageView = component.drawImage("");
         description = component.drawTextArea("");
-        description.setPrefHeight(150);
 
-        detailPane.getChildren().add(topPane);
-        detailPane.getChildren().add(component.drawText("Description"));
-        detailPane.getChildren().add(description);
-        topPane.getChildren().add(topLeftPane);
-        topPane.getChildren().add(imageView);
+        VBox vBox = new VBox();
+        vBox.getChildren().addAll(component.drawText("Description"), description);
+        detailPane.getChildren().add(topBox);
+        detailPane.getChildren().add(vBox);
+        topBox.getChildren().add(topLeftPane);
+        topBox.getChildren().add(imageView);
+
+        HBox.setHgrow(detailPane, Priority.ALWAYS);
+        VBox.setVgrow(detailPane, Priority.ALWAYS);
+        description.setPrefHeight(1000);
+        description.setWrapText(true);
     }
 
     /**
@@ -319,26 +335,29 @@ public class ImageManagement {
      */
     private void updateList(String location) {
         emptyDetail();
-        createRepo.setDisable(mediaController.existICS(location));
+        createRepo.setDisable(mediaController.getSplitLocationByIcs(location) != null);
         saveMetaData.setDisable(true);
         listView.getItems().clear();
-        locationView.setText(mediaController.getSimpleLocation(openedLocation));
+        locationView.setText(openedLocation);
+
+        LoadingService loadingService = new LoadingService();
+        loadingService.service();
+        //      loadingService.setListener(() -> {
         ArrayList<MediaInformation> mediaInfos = mediaController.getMediaInfos(location, selectedSortType);
         ArrayList<String> directories = mediaController.getDirectoryList(location, selectedSortType);
 
-        if (mediaInfos.size() > 0) {
-            selectedFile = mediaInfos.get(0);
-            updateDetail(selectedFile);
+        if (!mediaInfos.isEmpty()) {
+            selectedInfo = mediaInfos.get(0);
+            updateDetail(selectedInfo);
             listView.getSelectionModel().select(0);
         }
         for (int i = 0; i < mediaInfos.size(); i++) {
             MediaInformation mediaInformation = mediaInfos.get(i);
             StackPane item = component.drawItem(mediaInformation);
             listView.getItems().add(item);
-            // gridPane.setStyle("-fx-background-color: aquamarine");
             int index = i;
             item.setOnMouseClicked(event -> {
-                selectedFile = mediaInformation;
+                selectedInfo = mediaInformation;
                 if (currentUser.getRole() == 0) {
                     delMetaData.setDisable(mediaController.existFile(mediaInformation));
                 }
@@ -362,6 +381,7 @@ public class ImageManagement {
                 gotoNewLocation();
             });
         }
+        //    });
     }
 
     /**
@@ -386,7 +406,7 @@ public class ImageManagement {
      */
     private void updateDetail(MediaInformation mediaInformation) {
         emptyDetail();
-        saveMetaData.setDisable(!mediaController.existICS(openedLocation));
+        saveMetaData.setDisable(mediaController.getSplitLocationByIcs(openedLocation) == null);
         if (currentUser.getRole() == 0) {
             delMetaData.setDisable(mediaController.existFile(mediaInformation));
         }
@@ -399,18 +419,29 @@ public class ImageManagement {
         description.setText(mediaInformation.getDescription());
         checksum.setText(mediaInformation.getCheckSum());
         try {
-            String url = mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName();
-            Image image = new Image(new FileInputStream(url));
-            double rateOfResolution = image.getWidth() / image.getHeight();
-            double rateOfImageView = Common.mediaWidth / Common.mediaHeight;
-            if (rateOfResolution > rateOfImageView) {
-                imageView.setFitWidth(Common.mediaWidth);
-                imageView.setFitHeight(Common.mediaWidth / rateOfResolution);
-            } else {
-                imageView.setFitHeight(Common.mediaHeight);
-                imageView.setFitWidth(Common.mediaHeight * rateOfResolution);
+            String url = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
+
+            File file = new File(url);
+            String extension = file.getName().substring(file.getName().indexOf(".") + 1);
+            if (Arrays.asList(Common.extensionsImageExtra).contains(extension.toLowerCase())) {
+                String tempUrl = mediaController.getJpegFromHEIC(url);
+                if (tempUrl == null) {
+                    drawError("The Temp directory does not exist");
+                } else {
+                    file = new File(tempUrl);
+                }
             }
-            imageView.setImage(new Image(new FileInputStream(url)));
+
+            Image image = new Image(new FileInputStream(file));
+            imageView.setImage(image);
+            imageView.setCursor(Cursor.HAND);
+            imageView.setPreserveRatio(true);
+
+            imageView.setFitWidth(mainPane.widthProperty().doubleValue() / 3);
+            mainPane.widthProperty().addListener((observable, oldValue, newValue) -> {
+                imageView.setFitWidth(newValue.doubleValue() / 3);
+            });
+
             imageView.setOnMouseClicked(event -> {
                 if (event.getButton().equals(MouseButton.PRIMARY)) {
                     if (event.getClickCount() == 2) {
@@ -427,8 +458,35 @@ public class ImageManagement {
                 }
             });
         } catch (FileNotFoundException e) {
-            //  e.printStackTrace();
+            //     e.printStackTrace();
         }
+    }
+
+
+    /**
+     * draw error pane
+     *
+     * @param str string to show
+     */
+    private void drawError(String str) {
+        mainPane.getChildren().clear();
+        VBox box = new VBox();
+        box.setSpacing(30);
+        box.setPrefHeight(2000);
+        box.setAlignment(Pos.CENTER);
+        mainPane.getChildren().add(box);
+        Label label = new Label(str);
+        label.setFont(new Font(30));
+        HBox hBox = new HBox();
+        hBox.setAlignment(Pos.CENTER);
+        Button btn_ok = component.drawButton(hBox, "OK");
+
+        box.getChildren().add(label);
+        box.getChildren().add(hBox);
+        btn_ok.setOnMouseClicked(event -> {
+            System.exit(0);
+        });
+
     }
 
     /**

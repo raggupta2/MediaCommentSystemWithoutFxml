@@ -79,11 +79,11 @@ public class FileController {
         mediaInformation.setExtension((String) map.get("extension"));
         mediaInformation.setLocation((String) map.get("location"));
         mediaInformation.setDescription((String) map.get("description"));
-        mediaInformation.setLatitude((String) map.get("latitude"));
-        mediaInformation.setLongitude((String) map.get("longitude"));
+        mediaInformation.setLatitude(((String) map.get("latitude")).replace("#", "\""));
+        mediaInformation.setLongitude(((String) map.get("longitude")).replace("#", "\""));
         mediaInformation.setGoogleMapUrl((String) map.get("googleMapUrl"));
-        mediaInformation.setModificationTime(new Date((String) map.get("modificationTime")));
-        mediaInformation.setTakenTime(new Date((String) map.get("takenTime")));
+        mediaInformation.setModificationTime((String) map.get("modificationTime"));
+        mediaInformation.setTakenTime((String) map.get("takenTime"));
         mediaInformation.setOriginalFileSize((double) map.get("originalFileSize"));
         mediaInformation.setCurrentFileSize((double) map.get("currentFileSize"));
         mediaInformation.setModifier((String) map.get("modifier"));
@@ -105,8 +105,8 @@ public class FileController {
         str += "\"extension\":\"" + information.getExtension() + "\",";
         str += "\"location\":\"" + information.getLocation() + "\",";
         str += "\"description\":\"" + information.getDescription() + "\",";
-        str += "\"latitude\":\"" + information.getLatitude() + (information.getLatitude() != null && information.getLatitude().contains("\"") ? "," : "\",");
-        str += "\"longitude\":\"" + information.getLongitude() + (information.getLongitude() != null && information.getLongitude().contains("\"") ? "," : "\",");
+        str += "\"latitude\":\"" + (information.getLatitude() != null ? information.getLatitude().replace("\"", "#") : "") + "\",";
+        str += "\"longitude\":\"" + (information.getLongitude() != null ? information.getLongitude().replace("\"", "#") : "") + "\",";
         str += "\"googleMapUrl\":\"" + information.getGoogleMapUrl() + "\",";
         str += "\"modificationTime\":\"" + information.getModificationTime() + "\",";
         str += "\"takenTime\":\"" + information.getTakenTime() + "\",";
@@ -125,14 +125,14 @@ public class FileController {
      * @param fullPath of image to get info
      * @return media info
      */
-    private MediaInformation getInfoFromImage(String fullPath) {
-        MediaInformation mediaInformation = new MediaInformation("", "", "", "", "", "", "", new Date(), new Date(), 0, 0, "", "", 0);
+    public MediaInformation getInfoFromImage(String fullPath) {
+        MediaInformation mediaInformation = new MediaInformation("", "", "", "", "", "", "", "", "", 0, 0, "", "", 0);
         try {
             Metadata metadata = ImageMetadataReader.readMetadata(new File(fullPath));
             for (Directory directory : metadata.getDirectories()) {
                 //    System.out.println(directory.getName());
                 for (Tag tag : directory.getTags()) {
-                    //  System.out.println(tag.getTagName() + " : " + tag.getDescription());
+                    //     System.out.println(tag.getTagName() + " : " + tag.getDescription());
 
                     if (tag.getTagName().toLowerCase().equals("GPS Latitude".toLowerCase())) {
                         mediaInformation.setLatitude(tag.getDescription());
@@ -144,7 +144,7 @@ public class FileController {
                         mediaInformation.setGoogleMapUrl(tag.getDescription());
                     }
                     if (tag.getTagName().toLowerCase().equals("Date/Time".toLowerCase())) {
-                        //   mediaInformation.setTakenTime(new Date(tag.getDescription()));
+                        mediaInformation.setTakenTime(tag.getDescription());
                     }
                     if (tag.getTagName().toLowerCase().equals("File Size".toLowerCase())) {
                         mediaInformation.setOriginalFileSize(Double.parseDouble(tag.getDescription().substring(0, tag.getDescription().length() - 5)));
@@ -172,13 +172,13 @@ public class FileController {
      * @return video info
      */
     public MediaInformation getInfoFromVideo(String fullPath) {
-        MediaInformation mediaInformation = new MediaInformation("", "", "", "", "", "", "", new Date(), new Date(), 0, 0, "", "", 0);
+        MediaInformation mediaInformation = new MediaInformation("", "", "", "", "", "", "", "", "", 0, 0, "", "", 0);
         try {
             Metadata metadata = ImageMetadataReader.readMetadata(new File(fullPath));
             for (Directory directory : metadata.getDirectories()) {
                 //    System.out.println(directory.getName());
                 for (Tag tag : directory.getTags()) {
-                    //  System.out.println(tag.getTagName() + " : " + tag.getDescription());
+                    //      System.out.println(tag.getTagName() + " : " + tag.getDescription());
 
                     if (tag.getTagName().toLowerCase().equals("GPS Latitude".toLowerCase())) {
                         mediaInformation.setLatitude(tag.getDescription());
@@ -213,45 +213,26 @@ public class FileController {
 
 
     /**
-     * get all log of change of an media
-     *
-     * @param fullPath full path of the text file of a media
-     * @return list of object
-     */
-    public ArrayList<MediaInformation> getAllInfosOfOneMedia(String fullPath) {
-        ArrayList<MediaInformation> data = new ArrayList<>();
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(fullPath));
-            String str = br.readLine();
-            while (str != null) {
-                MediaInformation mediaInformation = fromJsonStringToObject(str);
-                data.add(mediaInformation);
-                str = br.readLine();
-            }
-            br.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return data;
-    }
-
-    /**
      * get last info of each media
      *
-     * @param mediaUrlMeta   url array with meta
-     * @param mediaUrlNoMeta url array without meta
+     * @param mediaUrlMeta url array with meta
      * @return list of infos
      */
-    public ArrayList<MediaInformation> getLastInfosOfEachMedia(String location, ArrayList<String> mediaUrlMeta, ArrayList<String> mediaUrlNoMeta) {
+    public ArrayList<MediaInformation> getLastInfosOfEachMedia(String locationMeta, ArrayList<String> mediaUrlMeta) {
         ArrayList<MediaInformation> data = new ArrayList<>();
         for (int i = 0; i < mediaUrlMeta.size(); i++) {
             try {
-                String url = location + Common.childSlash + Common.metadataFolderName + Common.childSlash + mediaUrlMeta.get(i);
+                String url = locationMeta + Common.childSlash + mediaUrlMeta.get(i);
                 BufferedReader br = new BufferedReader(new FileReader(url));
-                String str = br.readLine();
+
                 String str1 = "";
+                String str = br.readLine();
                 while (str != null) {
-                    str1 = str;
+                    if (str.startsWith("{")) {
+                        str1 = str;
+                    } else {
+                        str1 += "\n" + str;
+                    }
                     str = br.readLine();
                 }
                 MediaInformation mediaInformation = fromJsonStringToObject(str1);
@@ -260,26 +241,6 @@ public class FileController {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        for (int i = 0; i < mediaUrlNoMeta.size(); i++) {
-            String url = location + Common.childSlash + mediaUrlNoMeta.get(i);
-            MediaInformation mediaInformation;
-            String extension = mediaUrlNoMeta.get(i).substring(mediaUrlNoMeta.get(i).length() - 3);
-            if (Arrays.asList(Common.extensionsImage).contains(extension)) {
-                mediaInformation = getInfoFromImage(url);
-            } else {
-                mediaInformation = getInfoFromVideo(url);
-            }
-            mediaInformation.setName(mediaUrlNoMeta.get(i));
-            mediaInformation.setExtension(mediaUrlNoMeta.get(i).substring(mediaUrlNoMeta.get(i).length() - 3));
-            mediaInformation.setLocation(location);
-            mediaInformation.setDescription("");
-            mediaInformation.setModifier("");
-            mediaInformation.setTakenTime(new Date());
-            mediaInformation.setModificationTime(new Date());
-            mediaInformation.setCheckSum(getCheckSum(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName()));
-
-            data.add(mediaInformation);
         }
         return data;
     }
@@ -322,7 +283,7 @@ public class FileController {
      * @return string : checksum
      * @throws IOException
      */
-    private String getCheckSum(String fullPath) {
+    public String getCheckSum(String fullPath) {
         File file = new File(fullPath);
         MessageDigest mdigest = null;
         try {
@@ -363,6 +324,36 @@ public class FileController {
         String ret = "";
         ret = url.replace(" ", "%20");
         return ret;
+    }
+
+    /**
+     * convert from extra image such as heic to jpeg
+     * @param fullPath extra image path
+     * @param tempFileFullPath jpeg image path
+     * @return if success, true
+     */
+    public boolean convertImageToJpeg(String fullPath, String tempFileFullPath) {
+        String[] splitBySlash = tempFileFullPath.replace(Common.childSlash, "/").split("/");
+        String str = Common.temp;
+        if (new File(str).exists()) {
+            for (int i = 2; i < splitBySlash.length - 1; i++) {
+                str += Common.childSlash + splitBySlash[i];
+                File directory = new File(str);
+                if (!directory.exists()) {
+                    directory.mkdir();
+                }
+            }
+            ProcessBuilder pb2 = new ProcessBuilder(Common.pathImageMagicK, fullPath, tempFileFullPath);
+            pb2.redirectErrorStream(true);
+            try {
+                Process p2 = pb2.start();
+                p2.waitFor();
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+            }
+            return true;
+        }
+        return false;
     }
 
 }

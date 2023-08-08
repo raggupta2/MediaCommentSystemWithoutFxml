@@ -3,7 +3,6 @@ package sample.view;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
-import javafx.application.Platform;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -27,7 +26,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
+import java.util.Arrays;
 
 public class Component {
 
@@ -85,15 +84,17 @@ public class Component {
      * @param str2     second string to insert
      * @return second text created
      */
-    public TextField drawTextAndTextfield(GridPane gridPane, String str1, String str2) {
+    public TextField drawTextAndTextfield(GridPane gridPane, String str1, String str2, boolean isEditable) {
         Text text1 = new Text(str1);
         TextField text2 = new TextField(str2);
-        //    text1.setFill(Color.rgb(0,0,0));
-        //   text1.setStroke(Color.rgb(255,255,255));
         text1.setFont(new Font(12));
         text2.setFont(new Font(15));
-        text2.setEditable(false);
-        text2.setStyle("-fx-text-fill: rgb(50,50,200);-fx-background-color: rgb(200,200,200,0.4)");
+        text2.setEditable(isEditable);
+        if (isEditable) {
+
+        } else {
+            text2.setStyle("-fx-text-fill: rgb(50,50,200);-fx-background-color: rgb(200,200,200,0.4)");
+        }
         gridPane.addColumn(0, text1);
         gridPane.addColumn(1, text2);
         return text2;
@@ -180,12 +181,13 @@ public class Component {
     public ImageView drawIcon(String fullPath, boolean isImage) {
         ImageView imageView = null;
         try {
-            if (new File(fullPath).exists()) {
-                if (isImage) {
-                    imageView = new ImageView(new Image(new FileInputStream(fullPath)));
-                } else {
-                    imageView = new ImageView(new Image(new FileInputStream(Common.iconVideo)));
-                }
+            File file = new File(fullPath);
+            if (file.exists()) {
+               /* String extension = file.getName().substring(file.getName().indexOf(".") + 1);
+                if (Arrays.asList(Common.extensionsImageExtra).contains(extension.toLowerCase())) {
+                    file = new File(mediaController.getJpegFromHEIC(fullPath));
+                }*/
+                imageView = new ImageView(new Image(new FileInputStream(file)));
             } else {
                 imageView = new ImageView(new Image(new FileInputStream(Common.iconMissMedia)));
             }
@@ -206,7 +208,7 @@ public class Component {
     public StackPane drawItem(MediaInformation mediaInformation) {
         final StackPane stackPane = new StackPane();
         stackPane.setAlignment(Pos.CENTER_LEFT);
-        String fullPath = mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName();
+        String fullPath = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
         final ImageView icon = drawIcon(fullPath, mediaController.isImage(fullPath));
         final Label text = new Label(mediaInformation.getName());
         text.setMaxWidth(120);
@@ -240,7 +242,7 @@ public class Component {
             searchFix.setOnMouseClicked(event -> {
                 searchFix.setVisible(false);
                 loadingImg.setVisible(true);
-                RotateTransition rotateTransition = drawLoading(loadingImg);
+                RotateTransition rotateTransition = makeRotationOfImage(loadingImg);
                 rotateTransition.play();
 
                 ArrayList<Object> list = new ArrayList<>();
@@ -249,36 +251,26 @@ public class Component {
                 list.add(loadingImg);
                 mediaController.addMediaInfosSearching(fullPath, list);
 
-                Service<Void> service = new Service<Void>() {
-                    @Override
-                    protected Task<Void> createTask() {
-                        return new Task<Void>() {
-                            @Override
-                            protected Void call() throws Exception {
-                                boolean isMoved = mediaController.searchAndFix(mediaInformation);
-                                if (isMoved) {
-                                    rotateTransition.stop();
-                                    text.setTextFill(Color.rgb(50, 200, 50));
-                                    try {
-                                        icon.setImage(new Image(new FileInputStream(fullPath)));
-                                    } catch (FileNotFoundException e) {
-                                        e.printStackTrace();
-                                    }
-                                    loadingImg.setVisible(false);
-                                } else {
-                                    loadingImg.setVisible(false);
-                                    searchFix.setVisible(true);
-                                }
-
-
-                                //Keep with the background work
-                                return null;
-                            }
-                        };
+                LoadingService loadingService = new LoadingService();
+                loadingService.service();
+                loadingService.setListener(() -> {
+                    boolean isMoved = mediaController.searchAndFix(mediaInformation);
+                    if (isMoved) {
+                        rotateTransition.stop();
+                        text.setTextFill(Color.rgb(50, 200, 50));
+                        try {
+                            icon.setImage(new Image(new FileInputStream(fullPath)));
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                        loadingImg.setVisible(false);
+                    } else {
+                        loadingImg.setVisible(false);
+                        searchFix.setVisible(true);
                     }
-                };
-                service.start();
+                });
             });
+
             searchFix.setOnMouseEntered(event -> {
                 searchFix.setFill(Color.rgb(0, 0, 0));
                 searchFix.setUnderline(true);
@@ -293,8 +285,13 @@ public class Component {
         return stackPane;
     }
 
-
-    private RotateTransition drawLoading(ImageView i) {
+    /**
+     * make rotation of image view
+     *
+     * @param i image to make rotation
+     * @return rotation transition of image
+     */
+    private RotateTransition makeRotationOfImage(ImageView i) {
         RotateTransition rotateTransition = new RotateTransition();
         rotateTransition.setDuration(Duration.millis(1000));
         rotateTransition.setNode(i);
@@ -302,5 +299,9 @@ public class Component {
         rotateTransition.setCycleCount(Animation.INDEFINITE);
         rotateTransition.setInterpolator(Interpolator.LINEAR);
         return rotateTransition;
+    }
+
+    public void drawLoading() {
+
     }
 }
