@@ -3,8 +3,6 @@ package sample.view;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
-import javafx.concurrent.Service;
-import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -26,7 +24,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Component {
 
@@ -219,7 +216,7 @@ public class Component {
         if (!mediaController.existFile(mediaInformation)) {
             text.setTextFill(Color.rgb(200, 0, 0));
 
-            final ImageView loadingImg = drawIcon(Common.iconLoading, true);
+            final ImageView loadingImg = drawIcon(Common.iconLoadingSearch, true);
             stackPane.getChildren().add(loadingImg);
             StackPane.setAlignment(loadingImg, Pos.CENTER_RIGHT);
 
@@ -253,7 +250,36 @@ public class Component {
 
                 LoadingService loadingService = new LoadingService();
                 loadingService.service();
-                loadingService.setListener(() -> {
+
+                loadingService.setListener(new LoadingService.Listener() {
+                    @Override
+                    public void before() {
+                        boolean isMoved = mediaController.searchAndFix(mediaInformation);
+                        if (isMoved) {
+                            rotateTransition.stop();
+                            text.setTextFill(Color.rgb(50, 200, 50));
+                            try {
+                                icon.setImage(new Image(new FileInputStream(fullPath)));
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            }
+                            loadingImg.setVisible(false);
+                        } else {
+                            loadingImg.setVisible(false);
+                            searchFix.setVisible(true);
+                        }
+                    }
+
+                    @Override
+                    public void body() {
+
+                    }
+                    @Override
+                    public void after() {
+
+                    }
+                });
+              /*  loadingService.setListener(() -> {
                     boolean isMoved = mediaController.searchAndFix(mediaInformation);
                     if (isMoved) {
                         rotateTransition.stop();
@@ -268,7 +294,7 @@ public class Component {
                         loadingImg.setVisible(false);
                         searchFix.setVisible(true);
                     }
-                });
+                });*/
             });
 
             searchFix.setOnMouseEntered(event -> {
@@ -291,7 +317,7 @@ public class Component {
      * @param i image to make rotation
      * @return rotation transition of image
      */
-    private RotateTransition makeRotationOfImage(ImageView i) {
+    public RotateTransition makeRotationOfImage(ImageView i) {
         RotateTransition rotateTransition = new RotateTransition();
         rotateTransition.setDuration(Duration.millis(1000));
         rotateTransition.setNode(i);
@@ -299,9 +325,5 @@ public class Component {
         rotateTransition.setCycleCount(Animation.INDEFINITE);
         rotateTransition.setInterpolator(Interpolator.LINEAR);
         return rotateTransition;
-    }
-
-    public void drawLoading() {
-
     }
 }

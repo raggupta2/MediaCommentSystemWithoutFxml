@@ -1,5 +1,6 @@
 package sample.view;
 
+import javafx.animation.RotateTransition;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -16,28 +17,23 @@ import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
-import magick.ImageInfo;
-import magick.MagickException;
-import magick.MagickImage;
 import sample.Common;
 import sample.controller.FileController;
 import sample.controller.MediaController;
 import sample.model.MediaInformation;
 import sample.model.User;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.logging.Logger;
 
 public class ImageManagement {
 
     private final Component component;
 
     private final VBox mainPane;
+    private StackPane loadingPane;
     private HBox listAndDetailPane;
     private VBox listPane;
     private VBox detailPane;
@@ -68,18 +64,38 @@ public class ImageManagement {
     private int openedLocationIndex = -1;
     private MediaInformation selectedInfo;
     private String selectedSortType;
+    private RotateTransition rotateTransition;
 
 
-    public ImageManagement(VBox gridPane, User user) {
+    public ImageManagement(VBox vBox, User user) {
         this.mediaController = new MediaController();
         this.component = new Component();
-        this.mainPane = gridPane;
+        vBox.getChildren().clear();
+
+        StackPane stackPane = new StackPane();
+        mainPane = new VBox();
+        loadingPane = new StackPane();
+        try {
+            ImageView i = new ImageView(new Image(new FileInputStream(Common.iconLoading)));
+            i.setFitWidth(250);
+            i.setFitHeight(250);
+            rotateTransition = component.makeRotationOfImage(i);
+            loadingPane.getChildren().add(i);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        appearLoading(false);
+        stackPane.getChildren().add(mainPane);
+        stackPane.getChildren().add(loadingPane);
+        loadingPane.setStyle("-fx-background-color: rgb(0,255,0,0.1)");
+
+        vBox.getChildren().add(stackPane);
         this.currentUser = user;
         mainPane.setSpacing(20);
         mainPane.setAlignment(Pos.TOP_CENTER);
         drawMediaManagement();
 
-      /*  openedLocation = "F:\\z---exam";
+     /*   openedLocation = "F:\\z---exam";
         updateList(openedLocation);*/
     }
 
@@ -342,46 +358,76 @@ public class ImageManagement {
 
         LoadingService loadingService = new LoadingService();
         loadingService.service();
-        //      loadingService.setListener(() -> {
-        ArrayList<MediaInformation> mediaInfos = mediaController.getMediaInfos(location, selectedSortType);
-        ArrayList<String> directories = mediaController.getDirectoryList(location, selectedSortType);
+        final ArrayList<MediaInformation>[] mediaInfos = new ArrayList[]{new ArrayList<>()};
+        final ArrayList<String>[] directories = new ArrayList[]{new ArrayList<>()};
+        final StackPane[][] stackPanes = {null};
+        loadingService.setListener(new LoadingService.Listener() {
+            @Override
+            public void before() {
+                appearLoading(true);
+                mediaInfos[0] = mediaController.getMediaInfos(location, selectedSortType);
+                directories[0] = mediaController.getDirectoryList(location, selectedSortType);
 
-        if (!mediaInfos.isEmpty()) {
-            selectedInfo = mediaInfos.get(0);
-            updateDetail(selectedInfo);
-            listView.getSelectionModel().select(0);
-        }
-        for (int i = 0; i < mediaInfos.size(); i++) {
-            MediaInformation mediaInformation = mediaInfos.get(i);
-            StackPane item = component.drawItem(mediaInformation);
-            listView.getItems().add(item);
-            int index = i;
-            item.setOnMouseClicked(event -> {
-                selectedInfo = mediaInformation;
-                if (currentUser.getRole() == 0) {
-                    delMetaData.setDisable(mediaController.existFile(mediaInformation));
+                stackPanes[0] = new StackPane[mediaInfos[0].size() + directories[0].size()];
+                for (int i = 0; i < mediaInfos[0].size(); i++) {
+                    MediaInformation mediaInformation = mediaInfos[0].get(i);
+                    StackPane item = component.drawItem(mediaInformation);
+                    stackPanes[0][i] = item;
+                    int index = i;
+                    item.setOnMouseClicked(event -> {
+                        selectedInfo = mediaInformation;
+                        if (currentUser.getRole() == 0) {
+                            delMetaData.setDisable(mediaController.existFile(mediaInformation));
+                        }
+                        updateDetail(mediaInfos[0].get(index));
+                    });
                 }
-                updateDetail(mediaInfos.get(index));
-            });
-        }
 
-        for (int i = 0; i < directories.size(); i++) {
-            String directory = directories.get(i);
-            StackPane stackPane = new StackPane();
-            stackPane.setAlignment(Pos.CENTER_LEFT);
-            ImageView icon = component.drawIcon(Common.iconFolder, true);
-            stackPane.getChildren().add(icon);
-            Label text = new Label(directory);
-            text.setMaxWidth(120);
-            stackPane.getChildren().add(text);
-            listView.getItems().add(stackPane);
-            StackPane.setMargin(text, new Insets(0, 0, 0, 20));
-            stackPane.setOnMouseClicked(event -> {
-                openedLocation += (openedLocation.endsWith("\\") ? "" : Common.childSlash) + directory;
-                gotoNewLocation();
-            });
+                for (int i = 0; i < directories[0].size(); i++) {
+                    String directory = directories[0].get(i);
+                    StackPane stackPane = new StackPane();
+                    stackPane.setAlignment(Pos.CENTER_LEFT);
+                    ImageView icon = component.drawIcon(Common.iconFolder, true);
+                    stackPane.getChildren().add(icon);
+                    Label text = new Label(directory);
+                    text.setMaxWidth(120);
+                    stackPane.getChildren().add(text);
+                    stackPanes[0][mediaInfos[0].size() + i] = stackPane;
+                    StackPane.setMargin(text, new Insets(0, 0, 0, 20));
+                    stackPane.setOnMouseClicked(event -> {
+                        openedLocation += (openedLocation.endsWith("\\") ? "" : Common.childSlash) + directory;
+                        gotoNewLocation();
+                    });
+                }
+            }
+
+            @Override
+            public void body() {
+                listView.getItems().addAll(stackPanes[0]);
+                if (!mediaInfos[0].isEmpty()) {
+                    selectedInfo = mediaInfos[0].get(0);
+                    updateDetail(selectedInfo);
+                    listView.getSelectionModel().select(0);
+                }
+            }
+
+            @Override
+            public void after() {
+                appearLoading(false);
+            }
+        });
+    }
+
+    private void appearLoading(boolean isLoading) {
+        if (isLoading) {
+            rotateTransition.play();
+            loadingPane.setVisible(true);
+            System.out.println("start");
+        } else {
+            rotateTransition.stop();
+            loadingPane.setVisible(false);
+            System.out.println("end");
         }
-        //    });
     }
 
     /**

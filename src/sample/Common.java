@@ -29,5 +29,6 @@ public class Common {
     public static String iconVideo = executionPath + "/" + "img/icon-video1.png";
     public static String iconBack = executionPath + "/" + "img/icon-back.png";
     public static String iconNext = executionPath + "/" + "img/icon-next.png";
-    public static String iconLoading = executionPath + "/" + "img/icon-loading.png";
+    public static String iconLoadingSearch = executionPath + "/" + "img/icon-loading.png";
+    public static String iconLoading = executionPath + "/" + "img/icon-loading1.png";
 }
