@@ -488,13 +488,14 @@ public class ImageManagement {
                 imageView.setFitWidth(newValue.doubleValue() / 3);
             });
 
+            File finalFile = file;
             imageView.setOnMouseClicked(event -> {
                 if (event.getButton().equals(MouseButton.PRIMARY)) {
                     if (event.getClickCount() == 2) {
                         try {
-                            String fileName = url;
+                            String fullPath = finalFile.getAbsolutePath();
                             String[] commands = {
-                                    "cmd.exe", "/c", "start", "\"DummyTitle\"", "\"" + fileName + "\""
+                                    "cmd.exe", "/c", "start", "\"DummyTitle\"", "\"" + fullPath + "\""
                             };
                             Process process = Runtime.getRuntime().exec(commands);
                         } catch (IOException e) {
