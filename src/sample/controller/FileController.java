@@ -6,16 +6,18 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
+import javafx.scene.media.Media;
 import sample.Common;
 import sample.model.MediaInformation;
 import sample.model.User;
 
 import java.io.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.Map;
 
 public class FileController {
@@ -354,6 +356,31 @@ public class FileController {
             return true;
         }
         return false;
+    }
+
+    /**
+     * copy any media to mp4
+     * @param media media of mp4
+     * @param f file for copy
+     */
+    public void copyVideoToMp4(Media media, File f) {
+        try {
+            Field locatorField = media.getClass().getDeclaredField("jfxLocator");
+            {
+                Field modifiersField = Field.class.getDeclaredField("modifiers");
+                modifiersField.setAccessible(true);
+                modifiersField.setInt(locatorField, locatorField.getModifiers() & ~Modifier.FINAL);
+                locatorField.setAccessible(true);
+            }
+            CustomLocator customLocator = new CustomLocator(f.toURI());
+            customLocator.init();
+            customLocator.hack("video/mp4", 100000, f.toURI());
+            locatorField.set(media, customLocator);
+        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 
 }

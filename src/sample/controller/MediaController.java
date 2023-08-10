@@ -73,13 +73,9 @@ public class MediaController {
 
             for (int i = 0; i < filesInLocation.size(); i++) {
                 String url = location + Common.childSlash + filesInLocation.get(i);
-                MediaInformation mediaInformation;
-                String extension = filesInLocation.get(i).substring(filesInLocation.get(i).indexOf(".") + 1);
-                if (Arrays.asList(Common.extensionsImage).contains(extension)) {
-                    mediaInformation = fileController.getInfoFromImage(url);
-                } else {
-                    mediaInformation = fileController.getInfoFromVideo(url);
-                }
+                //     String extension = filesInLocation.get(i).substring(filesInLocation.get(i).indexOf(".") + 1);
+                MediaInformation mediaInformation = fileController.getInfoFromImage(url);
+
                 mediaInformation.setName(filesInLocation.get(i));
                 mediaInformation.setExtension(filesInLocation.get(i).substring(filesInLocation.get(i).indexOf(".") + 1));
                 mediaInformation.setLocation(location);
@@ -209,30 +205,23 @@ public class MediaController {
         mediaInfosSearching.put(fullPath, list);
     }
 
-    public void removeMediaInfosSearching(String fullPath) {
-        mediaInfosSearching.remove(fullPath);
-    }
-
-
     /**
      * whether it is image or not
      *
-     * @param fullPath current selected file
+     * @param extension current selected file extension
      * @return if exist, true
      */
-    public boolean isImage(String fullPath) {
-        String extension = fullPath.substring(fullPath.indexOf(".") + 1);
+    public boolean isImage(String extension) {
         return Arrays.asList(Common.extensionsImage).contains(extension);
     }
 
     /**
      * whether it is video or not
      *
-     * @param fullPath current selected file
+     * @param extension current selected file extension
      * @return if exist, true
      */
-    public boolean isVideo(String fullPath) {
-        String extension = fullPath.substring(fullPath.indexOf(".") + 1);
+    public boolean isVideo(String extension) {
         return Arrays.asList(Common.extensionsVideo).contains(extension);
     }
 
@@ -294,6 +283,17 @@ public class MediaController {
     }
 
     /**
+     * whether metadata exist in folder or not
+     *
+     * @param information current selected info
+     * @return if equal checksum, true
+     */
+    public boolean isEqualChecksum(MediaInformation information) {
+        String checksum = fileController.getCheckSum(information.getLocation() + Common.childSlash + information.getName());
+        return information.getCheckSum().equals(checksum);
+    }
+
+    /**
      * split location two part by last "\"
      *
      * @param location to split
@@ -352,6 +352,11 @@ public class MediaController {
         }
     }
 
+    /**
+     * get jpeg from heic file
+     * @param fullPath path of heic
+     * @return path of temp file
+     */
     public String getJpegFromHEIC(String fullPath) {
         String tempFileFullPath = fullPath.replace(fullPath.substring(0, fullPath.indexOf(":") + 1), Common.temp);
         tempFileFullPath = tempFileFullPath.replace(fullPath.substring(fullPath.indexOf(".") + 1), "jpg");
@@ -362,6 +367,5 @@ public class MediaController {
         }
         return tempFileFullPath;
     }
-
 
 }

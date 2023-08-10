@@ -12,6 +12,10 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
@@ -66,6 +70,12 @@ public class ImageManagement {
     private String selectedSortType;
     private RotateTransition rotateTransition;
 
+    private ArrayList<MediaInformation> mediaInfos;
+    private ArrayList<String> directories;
+    private StackPane[] stackPanes;
+    private String selectedFilePath;
+    private VBox topLeftBox;
+
 
     public ImageManagement(VBox vBox, User user) {
         this.mediaController = new MediaController();
@@ -105,12 +115,7 @@ public class ImageManagement {
     private void drawMediaManagement() {
         mainPane.getChildren().clear();
         String url = "file:" + FileController.getValidUrl(Common.backgroundMain);
-        mainPane.setStyle(
-                "-fx-background-image: url(" + url + ");" +
-                        "-fx-background-repeat: no-repeat;" +
-                        "-fx-background-position: center;" +
-                        "-fx-background-size: stretch;"
-        );
+        mainPane.setStyle("-fx-background-image: url(" + url + ");" + "-fx-background-repeat: no-repeat;" + "-fx-background-position: center;" + "-fx-background-size: stretch;");
         drawMenu();
         drawControlPane();
         drawListPane();
@@ -315,8 +320,11 @@ public class ImageManagement {
 
         detailPane.setSpacing(10);
         HBox topBox = new HBox();
+        topLeftBox = new VBox();
         GridPane topLeftPane = new GridPane();
+        topLeftBox.getChildren().add(topLeftPane);
 
+        topLeftBox.setSpacing(10);
         topBox.setSpacing(20);
         topLeftPane.setVgap(10);
         topLeftPane.setHgap(10);
@@ -324,7 +332,7 @@ public class ImageManagement {
         lastModifier = component.drawTextAndTextfield(topLeftPane, "Last Modifier : ", "", false);
         latitude = component.drawTextAndTextfield(topLeftPane, "Latitude : ", "", true);
         longitude = component.drawTextAndTextfield(topLeftPane, "Longitude : ", "", true);
-        googleMapUrl = component.drawTextAndTextfield(topLeftPane, "Google map url : ", "", false);
+        googleMapUrl = component.drawTextAndTextfield(topLeftPane, "Google map url : ", "", true);
         originalFileSize = component.drawTextAndTextfield(topLeftPane, "Original Size : ", "", false);
         currentFileSize = component.drawTextAndTextfield(topLeftPane, "Current Size : ", "", false);
         checksum = component.drawTextAndTextfield(topLeftPane, "Checksum : ", "", false);
@@ -335,7 +343,7 @@ public class ImageManagement {
         vBox.getChildren().addAll(component.drawText("Description"), description);
         detailPane.getChildren().add(topBox);
         detailPane.getChildren().add(vBox);
-        topBox.getChildren().add(topLeftPane);
+        topBox.getChildren().add(topLeftBox);
         topBox.getChildren().add(imageView);
 
         HBox.setHgrow(detailPane, Priority.ALWAYS);
@@ -358,41 +366,40 @@ public class ImageManagement {
 
         LoadingService loadingService = new LoadingService();
         loadingService.service();
-        final ArrayList<MediaInformation>[] mediaInfos = new ArrayList[]{new ArrayList<>()};
-        final ArrayList<String>[] directories = new ArrayList[]{new ArrayList<>()};
-        final StackPane[][] stackPanes = {null};
+        mediaInfos = new ArrayList<>();
+        directories = new ArrayList<>();
         loadingService.setListener(new LoadingService.Listener() {
             @Override
             public void before() {
                 appearLoading(true);
-                mediaInfos[0] = mediaController.getMediaInfos(location, selectedSortType);
-                directories[0] = mediaController.getDirectoryList(location, selectedSortType);
+                mediaInfos = mediaController.getMediaInfos(location, selectedSortType);
+                directories = mediaController.getDirectoryList(location, selectedSortType);
 
-                stackPanes[0] = new StackPane[mediaInfos[0].size() + directories[0].size()];
-                for (int i = 0; i < mediaInfos[0].size(); i++) {
-                    MediaInformation mediaInformation = mediaInfos[0].get(i);
+                stackPanes = new StackPane[mediaInfos.size() + directories.size()];
+                for (int i = 0; i < mediaInfos.size(); i++) {
+                    MediaInformation mediaInformation = mediaInfos.get(i);
                     StackPane item = component.drawItem(mediaInformation);
-                    stackPanes[0][i] = item;
+                    stackPanes[i] = item;
                     int index = i;
                     item.setOnMouseClicked(event -> {
                         selectedInfo = mediaInformation;
                         if (currentUser.getRole() == 0) {
                             delMetaData.setDisable(mediaController.existFile(mediaInformation));
                         }
-                        updateDetail(mediaInfos[0].get(index));
+                        updateDetail(mediaInfos.get(index));
                     });
                 }
 
-                for (int i = 0; i < directories[0].size(); i++) {
-                    String directory = directories[0].get(i);
+                for (int i = 0; i < directories.size(); i++) {
+                    String directory = directories.get(i);
                     StackPane stackPane = new StackPane();
                     stackPane.setAlignment(Pos.CENTER_LEFT);
-                    ImageView icon = component.drawIcon(Common.iconFolder, true);
+                    ImageView icon = component.drawIcon(Common.iconFolder);
                     stackPane.getChildren().add(icon);
                     Label text = new Label(directory);
                     text.setMaxWidth(120);
                     stackPane.getChildren().add(text);
-                    stackPanes[0][mediaInfos[0].size() + i] = stackPane;
+                    stackPanes[mediaInfos.size() + i] = stackPane;
                     StackPane.setMargin(text, new Insets(0, 0, 0, 20));
                     stackPane.setOnMouseClicked(event -> {
                         openedLocation += (openedLocation.endsWith("\\") ? "" : Common.childSlash) + directory;
@@ -403,12 +410,12 @@ public class ImageManagement {
 
             @Override
             public void body() {
-                listView.getItems().addAll(stackPanes[0]);
-                if (!mediaInfos[0].isEmpty()) {
-                    selectedInfo = mediaInfos[0].get(0);
+                listView.getItems().addAll(stackPanes);
+              /*  if (!mediaInfos.isEmpty()) {
+                    selectedInfo = mediaInfos.get(0);
                     updateDetail(selectedInfo);
                     listView.getSelectionModel().select(0);
-                }
+                }*/
             }
 
             @Override
@@ -434,6 +441,9 @@ public class ImageManagement {
      * empty content of detail pane
      */
     private void emptyDetail() {
+        if (topLeftBox.getChildren().get(0) instanceof Text) {
+            topLeftBox.getChildren().remove(0);
+        }
         lastModifier.setText("");
         latitude.setText("");
         longitude.setText("");
@@ -456,6 +466,12 @@ public class ImageManagement {
         if (currentUser.getRole() == 0) {
             delMetaData.setDisable(mediaController.existFile(mediaInformation));
         }
+        if (mediaController.existFile(mediaInformation) && !mediaController.isEqualChecksum(mediaInformation)) {
+            Text text = new Text("The checksum of this is not equal with metadata.");
+            text.setFill(Color.rgb(255, 0, 0));
+            //   text.setFont(new Font(20));
+            topLeftBox.getChildren().add(0, text);
+        }
         lastModifier.setText(mediaInformation.getModifier());
         latitude.setText(String.valueOf(mediaInformation.getLatitude()));
         longitude.setText(String.valueOf(mediaInformation.getLongitude()));
@@ -464,48 +480,76 @@ public class ImageManagement {
         currentFileSize.setText(mediaInformation.getCurrentFileSize() + " bytes");
         description.setText(mediaInformation.getDescription());
         checksum.setText(mediaInformation.getCheckSum());
-        try {
-            String url = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
 
-            File file = new File(url);
-            String extension = file.getName().substring(file.getName().indexOf(".") + 1);
-            if (Arrays.asList(Common.extensionsImageExtra).contains(extension.toLowerCase())) {
-                String tempUrl = mediaController.getJpegFromHEIC(url);
-                if (tempUrl == null) {
-                    drawError("The Temp directory does not exist");
-                } else {
-                    file = new File(tempUrl);
+        LoadingService loadingService = new LoadingService();
+        loadingService.service();
+        loadingService.setListener(new LoadingService.Listener() {
+            @Override
+            public void before() {
+                appearLoading(true);
+                selectedFilePath = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
+                if (Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase())) {
+                    selectedFilePath = mediaController.getJpegFromHEIC(selectedFilePath);
                 }
             }
 
-            Image image = new Image(new FileInputStream(file));
-            imageView.setImage(image);
-            imageView.setCursor(Cursor.HAND);
-            imageView.setPreserveRatio(true);
-
-            imageView.setFitWidth(mainPane.widthProperty().doubleValue() / 3);
-            mainPane.widthProperty().addListener((observable, oldValue, newValue) -> {
-                imageView.setFitWidth(newValue.doubleValue() / 3);
-            });
-
-            File finalFile = file;
-            imageView.setOnMouseClicked(event -> {
-                if (event.getButton().equals(MouseButton.PRIMARY)) {
-                    if (event.getClickCount() == 2) {
-                        try {
-                            String fullPath = finalFile.getAbsolutePath();
-                            String[] commands = {
-                                    "cmd.exe", "/c", "start", "\"DummyTitle\"", "\"" + fullPath + "\""
-                            };
-                            Process process = Runtime.getRuntime().exec(commands);
-                        } catch (IOException e) {
-                            e.printStackTrace();
+            @Override
+            public void body() {
+                if (selectedFilePath == null) {
+                    drawError("The Temp directory does not exist");
+                } else {
+                    try {
+                        if (Arrays.asList(Common.extensionsVideo).contains(mediaInformation.getExtension().toLowerCase())) {
+                            imageView.setImage(new Image(new FileInputStream(Common.iconVideo2)));
+                        } else if (Arrays.asList(Common.extensionsImage).contains(mediaInformation.getExtension().toLowerCase()) || Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase())) {
+                            imageView.setImage(new Image(new FileInputStream(selectedFilePath)));
                         }
+                        imageView.setCursor(Cursor.HAND);
+                        imageView.setPreserveRatio(true);
+
+                        imageView.setFitWidth(mainPane.widthProperty().doubleValue() / 3);
+                        mainPane.widthProperty().addListener((observable, oldValue, newValue) -> {
+                            imageView.setFitWidth(newValue.doubleValue() / 3);
+                        });
+                        imageView.setOnMouseClicked(event -> {
+                            if (event.getButton().equals(MouseButton.PRIMARY)) {
+                                if (event.getClickCount() == 2) {
+                                    if (Arrays.asList(Common.extensionsVideo).contains(mediaInformation.getExtension().toLowerCase())) {
+                                        playVideo();
+                                    } else if (Arrays.asList(Common.extensionsImage).contains(mediaInformation.getExtension().toLowerCase()) || Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase())) {
+                                        showImage();
+                                    }
+                                }
+                            }
+                        });
+                    } catch (FileNotFoundException e) {
+                        //   throw new RuntimeException(e);
                     }
                 }
-            });
-        } catch (FileNotFoundException e) {
-            //     e.printStackTrace();
+            }
+
+            @Override
+            public void after() {
+                appearLoading(false);
+            }
+        });
+    }
+
+    public void playVideo() {
+        ProcessBuilder pb = new ProcessBuilder(Common.pathVlc, selectedFilePath);
+        try {
+            Process start = pb.start();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void showImage() {
+        try {
+            String[] commands = {"cmd.exe", "/c", "start", "\"DummyTitle\"", "\"" + selectedFilePath + "\""};
+            Process process = Runtime.getRuntime().exec(commands);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

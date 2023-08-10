@@ -4,7 +4,7 @@ public class Common {
     public static String[] sortTypes = {"Date", "Size", "Type"};
     public static String[] extensionsImage = {"bmp", "jpg", "png"};
     public static String[] extensionsImageExtra = {"heic"};
-    public static String[] extensionsVideo = {"avi", "mp4", "3gp"};
+    public static String[] extensionsVideo = {"avi", "mp4", "3gp","mov"};
     public static String extensionsText = "txt";
     public static String metadataFolderName = ".ics";
     public static String temp = "D:\\temp";
@@ -18,6 +18,7 @@ public class Common {
 
     public static String aboutString = "Thanks for your running";
     public static String pathImageMagicK = "C:/Program Files/ImageMagick-7.1.1-Q16-HDRI/magick.exe";
+    public static String pathVlc = "C:/Program Files/VideoLAN/VLC/vlc.exe";
 
     private static final String executionPath = System.getProperty("user.dir").replace("\\", "/");
     public static String configFile = executionPath + "/" + "config.txt";
@@ -27,6 +28,7 @@ public class Common {
     public static String iconFolder = executionPath + "/" + "img/icon-folder.png";
     public static String iconMissMedia = executionPath + "/" + "img/icon-miss-media.png";
     public static String iconVideo = executionPath + "/" + "img/icon-video1.png";
+    public static String iconVideo2 = executionPath + "/" + "img/icon-video2.png";
     public static String iconBack = executionPath + "/" + "img/icon-back.png";
     public static String iconNext = executionPath + "/" + "img/icon-next.png";
     public static String iconLoadingSearch = executionPath + "/" + "img/icon-loading.png";

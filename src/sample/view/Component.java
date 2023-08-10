@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Component {
 
@@ -175,15 +176,17 @@ public class Component {
      * @param fullPath string url of image file
      * @return created image view
      */
-    public ImageView drawIcon(String fullPath, boolean isImage) {
+    public ImageView drawIcon(String fullPath) {
         ImageView imageView = null;
         try {
             File file = new File(fullPath);
             if (file.exists()) {
-               /* String extension = file.getName().substring(file.getName().indexOf(".") + 1);
+                String extension = file.getName().substring(file.getName().indexOf(".") + 1);
                 if (Arrays.asList(Common.extensionsImageExtra).contains(extension.toLowerCase())) {
                     file = new File(mediaController.getJpegFromHEIC(fullPath));
-                }*/
+                } else if (Arrays.asList(Common.extensionsVideo).contains(extension.toLowerCase())) {
+                    file = new File(Common.iconVideo);
+                }
                 imageView = new ImageView(new Image(new FileInputStream(file)));
             } else {
                 imageView = new ImageView(new Image(new FileInputStream(Common.iconMissMedia)));
@@ -206,7 +209,7 @@ public class Component {
         final StackPane stackPane = new StackPane();
         stackPane.setAlignment(Pos.CENTER_LEFT);
         String fullPath = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
-        final ImageView icon = drawIcon(fullPath, mediaController.isImage(fullPath));
+        final ImageView icon = drawIcon(fullPath);
         final Label text = new Label(mediaInformation.getName());
         text.setMaxWidth(120);
         text.setTextFill(Color.rgb(50, 200, 50));
@@ -216,7 +219,7 @@ public class Component {
         if (!mediaController.existFile(mediaInformation)) {
             text.setTextFill(Color.rgb(200, 0, 0));
 
-            final ImageView loadingImg = drawIcon(Common.iconLoadingSearch, true);
+            final ImageView loadingImg = drawIcon(Common.iconLoadingSearch);
             stackPane.getChildren().add(loadingImg);
             StackPane.setAlignment(loadingImg, Pos.CENTER_RIGHT);
 
@@ -250,7 +253,6 @@ public class Component {
 
                 LoadingService loadingService = new LoadingService();
                 loadingService.service();
-
                 loadingService.setListener(new LoadingService.Listener() {
                     @Override
                     public void before() {
@@ -274,29 +276,13 @@ public class Component {
                     public void body() {
 
                     }
+
                     @Override
                     public void after() {
 
                     }
                 });
-              /*  loadingService.setListener(() -> {
-                    boolean isMoved = mediaController.searchAndFix(mediaInformation);
-                    if (isMoved) {
-                        rotateTransition.stop();
-                        text.setTextFill(Color.rgb(50, 200, 50));
-                        try {
-                            icon.setImage(new Image(new FileInputStream(fullPath)));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                        loadingImg.setVisible(false);
-                    } else {
-                        loadingImg.setVisible(false);
-                        searchFix.setVisible(true);
-                    }
-                });*/
             });
-
             searchFix.setOnMouseEntered(event -> {
                 searchFix.setFill(Color.rgb(0, 0, 0));
                 searchFix.setUnderline(true);
@@ -307,6 +293,8 @@ public class Component {
             });
         } else if (!mediaController.existMetadata(mediaInformation)) {
             text.setTextFill(Color.rgb(0, 0, 0));
+        } else if (!mediaController.isEqualChecksum(mediaInformation)) {
+            text.setTextFill(Color.rgb(255, 150, 0));
         }
         return stackPane;
     }
