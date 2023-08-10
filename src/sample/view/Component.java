@@ -183,7 +183,10 @@ public class Component {
             if (file.exists()) {
                 String extension = file.getName().substring(file.getName().indexOf(".") + 1);
                 if (Arrays.asList(Common.extensionsImageExtra).contains(extension.toLowerCase())) {
-                    file = new File(mediaController.getJpegFromHEIC(fullPath));
+                    String tempFileName=mediaController.getJpegFromHEIC(fullPath);
+                    if (tempFileName!=null){
+                        file = new File(mediaController.getJpegFromHEIC(fullPath));
+                    }
                 } else if (Arrays.asList(Common.extensionsVideo).contains(extension.toLowerCase())) {
                     file = new File(Common.iconVideo);
                 }
