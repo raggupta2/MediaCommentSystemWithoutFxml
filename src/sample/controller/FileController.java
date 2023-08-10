@@ -357,30 +357,4 @@ public class FileController {
         }
         return false;
     }
-
-    /**
-     * copy any media to mp4
-     * @param media media of mp4
-     * @param f file for copy
-     */
-    public void copyVideoToMp4(Media media, File f) {
-        try {
-            Field locatorField = media.getClass().getDeclaredField("jfxLocator");
-            {
-                Field modifiersField = Field.class.getDeclaredField("modifiers");
-                modifiersField.setAccessible(true);
-                modifiersField.setInt(locatorField, locatorField.getModifiers() & ~Modifier.FINAL);
-                locatorField.setAccessible(true);
-            }
-            CustomLocator customLocator = new CustomLocator(f.toURI());
-            customLocator.init();
-            customLocator.hack("video/mp4", 100000, f.toURI());
-            locatorField.set(media, customLocator);
-        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
-    }
-
 }
