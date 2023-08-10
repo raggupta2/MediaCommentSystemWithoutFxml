@@ -255,7 +255,6 @@ public class Component {
                 mediaController.addMediaInfosSearching(fullPath, list);
 
                 LoadingService loadingService = new LoadingService();
-                loadingService.service();
                 loadingService.setListener(new LoadingService.Listener() {
                     @Override
                     public void before() {
@@ -285,6 +284,7 @@ public class Component {
 
                     }
                 });
+                loadingService.service();
             });
             searchFix.setOnMouseEntered(event -> {
                 searchFix.setFill(Color.rgb(0, 0, 0));

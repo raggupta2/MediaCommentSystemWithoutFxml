@@ -363,7 +363,6 @@ public class ImageManagement {
         locationView.setText(openedLocation);
 
         LoadingService loadingService = new LoadingService();
-        loadingService.service();
         mediaInfos = new ArrayList<>();
         directories = new ArrayList<>();
         loadingService.setListener(new LoadingService.Listener() {
@@ -421,6 +420,7 @@ public class ImageManagement {
                 appearLoading(false);
             }
         });
+        loadingService.service();
     }
 
     private void appearLoading(boolean isLoading) {
@@ -480,7 +480,6 @@ public class ImageManagement {
         checksum.setText(mediaInformation.getCheckSum());
 
         LoadingService loadingService = new LoadingService();
-        loadingService.service();
         loadingService.setListener(new LoadingService.Listener() {
             @Override
             public void before() {
@@ -531,6 +530,7 @@ public class ImageManagement {
                 appearLoading(false);
             }
         });
+        loadingService.service();
     }
 
     public void playVideo() {
