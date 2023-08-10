@@ -36,13 +36,7 @@ public class Login {
     private void drawLogin() {
         mainPane.getChildren().clear();
         mainPane.setAlignment(Pos.CENTER);
-        String url = "file:" + FileController.getValidUrl(Common.backgroundLogin);
-        mainPane.setStyle(
-                "-fx-background-image: url(" + url + ");" +
-                        "-fx-background-repeat: no-repeat;" +
-                        "-fx-background-position: center;" +
-                        "-fx-background-size: stretch"
-        );
+
 
         Text labelLogin = component.drawText("Login");
         labelLogin.setFont(new Font(40));

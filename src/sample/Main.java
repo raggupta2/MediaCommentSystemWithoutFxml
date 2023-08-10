@@ -14,6 +14,7 @@ import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.stage.Stage;
+import sample.controller.FileController;
 import sample.controller.MediaController;
 import sample.view.Login;
 
@@ -27,6 +28,13 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
 
         VBox root = new VBox();
+        String url = "file:" + FileController.getValidUrl(Common.backgroundMain);
+        root.setStyle(
+                "-fx-background-image: url(" + url + ");" +
+                        "-fx-background-repeat: no-repeat;" +
+                        "-fx-background-position: center;" +
+                        "-fx-background-size: stretch"
+        );
         Login login = new Login(root);
         String version = "0.9.5";
         primaryStage.setTitle("Image Comment System" + " " + version);

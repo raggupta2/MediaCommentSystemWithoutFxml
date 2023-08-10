@@ -114,8 +114,6 @@ public class ImageManagement {
      */
     private void drawMediaManagement() {
         mainPane.getChildren().clear();
-        String url = "file:" + FileController.getValidUrl(Common.backgroundMain);
-        mainPane.setStyle("-fx-background-image: url(" + url + ");" + "-fx-background-repeat: no-repeat;" + "-fx-background-position: center;" + "-fx-background-size: stretch;");
         drawMenu();
         drawControlPane();
         drawListPane();
@@ -549,7 +547,7 @@ public class ImageManagement {
             String[] commands = {"cmd.exe", "/c", "start", "\"DummyTitle\"", "\"" + selectedFilePath + "\""};
             Process process = Runtime.getRuntime().exec(commands);
         } catch (IOException e) {
-           System.out.println(e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 
