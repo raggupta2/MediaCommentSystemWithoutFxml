@@ -28,26 +28,12 @@ public class Main extends Application {
 
         VBox root = new VBox();
         Login login = new Login(root);
-        String version = "0.9.1";
+        String version = "0.9.5";
         primaryStage.setTitle("Image Comment System" + " " + version);
         Scene scene = new Scene(root, 800, 600);
         primaryStage.setScene(scene);
         primaryStage.getIcons().add(new Image(new FileInputStream(Common.iconCamera)));
         primaryStage.show();
-
-
-       /* StackPane root = new StackPane();
-        primaryStage.setTitle("Hello World");
-        primaryStage.setScene(new Scene(root));
-        primaryStage.show();
-
-        Media media=new Media("file:///F:/temp.mp4");
-        MediaPlayer mediaPlayer = new MediaPlayer(media);
-        MediaView mediaView = new MediaView(mediaPlayer);
-        mediaView.setPreserveRatio(true);
-        mediaView.fitWidthProperty().bind(root.widthProperty());
-        root.getChildren().add(mediaView);
-        mediaPlayer.setAutoPlay(true);*/
     }
 
     public static void main(String[] args) {

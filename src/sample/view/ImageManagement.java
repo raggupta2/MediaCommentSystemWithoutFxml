@@ -97,7 +97,7 @@ public class ImageManagement {
         appearLoading(false);
         stackPane.getChildren().add(mainPane);
         stackPane.getChildren().add(loadingPane);
-        loadingPane.setStyle("-fx-background-color: rgb(0,255,0,0.1)");
+        loadingPane.setStyle("-fx-background-color: rgb(255,255,255,0.5)");
 
         vBox.getChildren().add(stackPane);
         this.currentUser = user;
