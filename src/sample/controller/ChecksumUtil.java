@@ -21,7 +21,7 @@ public class ChecksumUtil {
         try {
             checksum = checksum(verifiedFilePath);
         } catch (IOException e) {
-            e.printStackTrace();
+           System.out.println(e.getMessage());
         }  finally {
             // print out the checksum
             System.out.println("current checksum : " + checksum + "\nstored checksum : " + storedChecksum);
@@ -49,7 +49,7 @@ public class ChecksumUtil {
         try {
             mdigest = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+           System.out.println(e.getMessage());
         }
         // Get file input stream for reading the file
         // content

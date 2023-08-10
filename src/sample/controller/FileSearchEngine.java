@@ -63,7 +63,7 @@ public class FileSearchEngine {
                     ret = file.getCanonicalPath();
                 System.out.println("file with same name: " + file.getCanonicalPath());
             } catch (IOException e) {
-                e.printStackTrace();
+               System.out.println(e.getMessage());
                 return ret;
             }
         }

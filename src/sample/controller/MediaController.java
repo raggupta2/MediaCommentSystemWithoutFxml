@@ -170,7 +170,7 @@ public class MediaController {
             try {
                 new File(fullPath).createNewFile();
             } catch (IOException e) {
-                e.printStackTrace();
+               System.out.println(e.getMessage());
                 return false;
             }
         }
@@ -192,7 +192,7 @@ public class MediaController {
             FileUtils.copyFile(sourceFile, createdFile);
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
+           System.out.println(e.getMessage());
         }
         return false;
     }

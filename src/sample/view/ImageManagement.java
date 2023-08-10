@@ -549,7 +549,7 @@ public class ImageManagement {
             String[] commands = {"cmd.exe", "/c", "start", "\"DummyTitle\"", "\"" + selectedFilePath + "\""};
             Process process = Runtime.getRuntime().exec(commands);
         } catch (IOException e) {
-            e.printStackTrace();
+           System.out.println(e.getMessage());
         }
     }
 

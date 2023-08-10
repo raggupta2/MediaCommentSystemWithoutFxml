@@ -45,7 +45,7 @@ public class FileController {
             }
             br.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         return null;
     }
@@ -160,9 +160,9 @@ public class FileController {
                 }
             }
         } catch (ImageProcessingException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         return mediaInformation;
     }
@@ -206,9 +206,9 @@ public class FileController {
                 }
             }
         } catch (ImageProcessingException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         return mediaInformation;
     }
@@ -241,7 +241,7 @@ public class FileController {
                 data.add(mediaInformation);
                 br.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println(e.getMessage());
             }
         }
         return data;
@@ -272,7 +272,7 @@ public class FileController {
             bw.write(str + "\n");
             bw.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
             return false;
         }
         return true;
@@ -291,7 +291,7 @@ public class FileController {
         try {
             mdigest = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         FileInputStream fis = null;
         StringBuilder sb = null;
@@ -309,9 +309,9 @@ public class FileController {
                 sb.append(Integer.toString((bytes[i] & 0xff) + 0x100, 16).substring(1));
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         return sb.toString();
     }
@@ -330,7 +330,8 @@ public class FileController {
 
     /**
      * convert from extra image such as heic to jpeg
-     * @param fullPath extra image path
+     *
+     * @param fullPath         extra image path
      * @param tempFileFullPath jpeg image path
      * @return if success, true
      */

@@ -148,7 +148,7 @@ public class Component {
             button.setPrefHeight(0);
             hBox.getChildren().add(button);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+           System.out.println(e.getMessage());
         }
         return button;
     }
@@ -165,7 +165,7 @@ public class Component {
             Image image = new Image(new FileInputStream(imgUrl));
             imageView = new ImageView(image);
         } catch (FileNotFoundException e) {
-            // e.printStackTrace();
+            //System.out.println(e.getMessage());
         }
         return imageView;
     }
@@ -183,8 +183,8 @@ public class Component {
             if (file.exists()) {
                 String extension = file.getName().substring(file.getName().indexOf(".") + 1);
                 if (Arrays.asList(Common.extensionsImageExtra).contains(extension.toLowerCase())) {
-                    String tempFileName=mediaController.getJpegFromHEIC(fullPath);
-                    if (tempFileName!=null){
+                    String tempFileName = mediaController.getJpegFromHEIC(fullPath);
+                    if (tempFileName != null) {
                         file = new File(mediaController.getJpegFromHEIC(fullPath));
                     }
                 } else if (Arrays.asList(Common.extensionsVideo).contains(extension.toLowerCase())) {
@@ -197,7 +197,7 @@ public class Component {
             imageView.setFitHeight(Common.iconHeight);
             imageView.setFitWidth(Common.iconWidth);
         } catch (FileNotFoundException e) {
-            //   e.printStackTrace();
+            System.out.println(e.getMessage());
         }
         return imageView;
     }
@@ -266,7 +266,7 @@ public class Component {
                             try {
                                 icon.setImage(new Image(new FileInputStream(fullPath)));
                             } catch (FileNotFoundException e) {
-                                e.printStackTrace();
+                               System.out.println(e.getMessage());
                             }
                             loadingImg.setVisible(false);
                         } else {
