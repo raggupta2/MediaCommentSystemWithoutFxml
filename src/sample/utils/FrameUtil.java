@@ -40,8 +40,8 @@ public class FrameUtil {
                     frame = frameGrabber.grabImage();
                     BufferedImage bi = converter.convert(frame);
                     if(bi == null) continue;
-                    String path = imgNum + ".jpg";
-                    ImageIO.write(bi, "jpg", new File(path));
+                /*    String path = imgNum + ".jpg";
+                    ImageIO.write(bi, "jpg", new File(path));*/
                     ret = SwingFXUtils.toFXImage(bi, null);;
                     break;
                 }

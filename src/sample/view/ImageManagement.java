@@ -26,6 +26,7 @@ import sample.controller.FileController;
 import sample.controller.MediaController;
 import sample.model.MediaInformation;
 import sample.model.User;
+import sample.utils.FrameUtil;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -105,7 +106,7 @@ public class ImageManagement {
         mainPane.setAlignment(Pos.TOP_CENTER);
         drawMediaManagement();
 
-     /*   openedLocation = "F:\\z---exam";
+       /* openedLocation = "F:\\z---exam";
         updateList(openedLocation);*/
     }
 
@@ -304,7 +305,7 @@ public class ImageManagement {
 
         HBox.setHgrow(listPane, Priority.ALWAYS);
         listView.setMaxWidth(Double.MAX_VALUE);
-        listPane.setMaxWidth(300);
+        listPane.setMaxWidth(400);
         listView.setPrefHeight(10000);
         listAndDetailPane.setPadding(new Insets(0, 20, 20, 20));
     }
@@ -375,7 +376,7 @@ public class ImageManagement {
                 stackPanes = new StackPane[mediaInfos.size() + directories.size()];
                 for (int i = 0; i < mediaInfos.size(); i++) {
                     MediaInformation mediaInformation = mediaInfos.get(i);
-                    StackPane item = component.drawItem(mediaInformation);
+                    StackPane item = component.drawItem(mediaInformation, selectedSortType);
                     stackPanes[i] = item;
                     int index = i;
                     item.setOnMouseClicked(event -> {
@@ -460,22 +461,23 @@ public class ImageManagement {
      */
     private void updateDetail(MediaInformation mediaInformation) {
         emptyDetail();
+        selectedFilePath = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
         saveMetaData.setDisable(mediaController.getSplitLocationByIcs(openedLocation) == null);
         if (currentUser.getRole() == 0) {
             delMetaData.setDisable(mediaController.existFile(mediaInformation));
         }
         if (mediaController.existFile(mediaInformation) && !mediaController.isEqualChecksum(mediaInformation)) {
-            Text text = new Text("The checksum of this is not equal with metadata.");
+            Text text = new Text(Common.messageForNotChecksum);
             text.setFill(Color.rgb(255, 0, 0));
             //   text.setFont(new Font(20));
             topLeftBox.getChildren().add(0, text);
         }
         lastModifier.setText(mediaInformation.getModifier());
-        latitude.setText(String.valueOf(mediaInformation.getLatitude()));
-        longitude.setText(String.valueOf(mediaInformation.getLongitude()));
+        latitude.setText(mediaInformation.getLatitude());
+        longitude.setText(mediaInformation.getLongitude());
         googleMapUrl.setText(mediaInformation.getGoogleMapUrl());
-        originalFileSize.setText(mediaInformation.getOriginalFileSize() + " bytes");
-        currentFileSize.setText(mediaInformation.getCurrentFileSize() + " bytes");
+        originalFileSize.setText(mediaController.fromSizeToString(mediaInformation.getOriginalFileSize()));
+        currentFileSize.setText(mediaController.fromSizeToString(mediaController.getMediaInfoOfFile(selectedFilePath).getOriginalFileSize()));
         description.setText(mediaInformation.getDescription());
         checksum.setText(mediaInformation.getCheckSum());
 
@@ -484,9 +486,11 @@ public class ImageManagement {
             @Override
             public void before() {
                 appearLoading(true);
-                selectedFilePath = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
                 if (Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase())) {
                     selectedFilePath = mediaController.getJpegFromHEIC(selectedFilePath);
+                }
+                if (Arrays.asList(Common.extensionsVideo).contains(mediaInformation.getExtension().toLowerCase())) {
+                    imageView.setImage(new FrameUtil().getFrame(selectedFilePath));
                 }
             }
 
@@ -496,9 +500,7 @@ public class ImageManagement {
                     drawError("The Temp directory does not exist");
                 } else {
                     try {
-                        if (Arrays.asList(Common.extensionsVideo).contains(mediaInformation.getExtension().toLowerCase())) {
-                            imageView.setImage(new Image(new FileInputStream(Common.iconVideo2)));
-                        } else if (Arrays.asList(Common.extensionsImage).contains(mediaInformation.getExtension().toLowerCase()) || Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase())) {
+                        if (Arrays.asList(Common.extensionsImage).contains(mediaInformation.getExtension().toLowerCase()) || Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase())) {
                             imageView.setImage(new Image(new FileInputStream(selectedFilePath)));
                         }
                         imageView.setCursor(Cursor.HAND);

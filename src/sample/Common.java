@@ -17,6 +17,7 @@ public class Common {
     public static int locationLength = 30;
 
     public static String aboutString = "Thanks for your running";
+    public static String messageForNotChecksum = "Please restore this file";
     public static String pathImageMagicK = "C:/Program Files/ImageMagick-7.1.1-Q16-HDRI/magick.exe";
     public static String pathVlc = "C:/Program Files/VideoLAN/VLC/vlc.exe";
 
@@ -31,6 +32,7 @@ public class Common {
     public static String iconVideo2 = executionPath + "/" + "img/icon-video2.png";
     public static String iconBack = executionPath + "/" + "img/icon-back.png";
     public static String iconNext = executionPath + "/" + "img/icon-next.png";
+    public static String iconSearch = executionPath + "/" + "img/icon-search.png";
     public static String iconLoadingSearch = executionPath + "/" + "img/icon-loading.png";
     public static String iconLoading = executionPath + "/" + "img/icon-loading1.png";
 }

@@ -3,8 +3,11 @@ package sample.view;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -19,6 +22,7 @@ import javafx.util.Duration;
 import sample.Common;
 import sample.controller.MediaController;
 import sample.model.MediaInformation;
+import sample.utils.DateTimeUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,6 +32,7 @@ import java.util.Arrays;
 
 public class Component {
 
+    private boolean isMoved = false;
     private MediaController mediaController;
 
     public Component() {
@@ -85,6 +90,14 @@ public class Component {
     public TextField drawTextAndTextfield(GridPane gridPane, String str1, String str2, boolean isEditable) {
         Text text1 = new Text(str1);
         TextField text2 = new TextField(str2);
+        text2.textProperty().addListener((observableValue, s, t1) -> {
+            System.out.println(text2.getText().length());
+            if (text2.getText().length() > 8000) {
+                String str = text2.getText().substring(0, 8000);
+                text2.setText(str);
+            }
+            System.out.println(text2.getText().length());
+        });
         text1.setFont(new Font(12));
         text2.setFont(new Font(15));
         text2.setEditable(isEditable);
@@ -106,6 +119,14 @@ public class Component {
      */
     public TextArea drawTextArea(String str) {
         TextArea t = new TextArea(str);
+        t.textProperty().addListener((observableValue, s, t1) -> {
+            System.out.println(t.getText().length());
+            if (t.getText().length() > 8000) {
+                String str1 = t.getText().substring(0, 8000);
+                t.setText(str1);
+            }
+            System.out.println(t.getText().length());
+        });
         return t;
     }
 
@@ -148,7 +169,7 @@ public class Component {
             button.setPrefHeight(0);
             hBox.getChildren().add(button);
         } catch (FileNotFoundException e) {
-           System.out.println(e.getMessage());
+            System.out.println(e.getMessage());
         }
         return button;
     }
@@ -208,49 +229,70 @@ public class Component {
      * @param mediaInformation file info to insert
      * @return grid pane to insert to list view
      */
-    public StackPane drawItem(MediaInformation mediaInformation) {
-        final StackPane stackPane = new StackPane();
+    public StackPane drawItem(MediaInformation mediaInformation, String sortType) {
+        StackPane stackPane = new StackPane();
         stackPane.setAlignment(Pos.CENTER_LEFT);
         String fullPath = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
         final ImageView icon = drawIcon(fullPath);
-        final Label text = new Label(mediaInformation.getName());
-        text.setMaxWidth(120);
-        text.setTextFill(Color.rgb(50, 200, 50));
+        final Label fileName = new Label(mediaInformation.getName());
+        final Label property = new Label();
+        final ImageView searchFix = drawIcon(Common.iconSearch);
+        final ImageView loadingImg = drawIcon(Common.iconLoadingSearch);
+
+        searchFix.setCursor(Cursor.HAND);
+
+        searchFix.setVisible(false);
+        loadingImg.setVisible(false);
+
+        StackPane.setAlignment(searchFix, Pos.CENTER_RIGHT);
+        StackPane.setAlignment(loadingImg, Pos.CENTER_RIGHT);
+        property.setAlignment(Pos.CENTER_RIGHT);
+        RotateTransition rotateTransition = makeRotationOfImage(loadingImg);
+
+        stackPane.widthProperty().addListener((observable, oldValue, newValue) -> {
+            fileName.setMaxWidth((newValue.doubleValue() - 40) / 1.5);
+            property.setMaxWidth((newValue.doubleValue() - 40) / 3);
+        });
+        //  property.setStyle("-fx-background-color: red");
+
+        fileName.setTextFill(Color.rgb(50, 200, 50));
         stackPane.getChildren().add(icon);
-        stackPane.getChildren().add(text);
-        StackPane.setMargin(text, new Insets(0, 0, 0, 20));
+        stackPane.getChildren().add(fileName);
+        stackPane.getChildren().add(property);
+        stackPane.getChildren().add(searchFix);
+        stackPane.getChildren().add(loadingImg);
+        StackPane.setMargin(fileName, new Insets(0, 0, 0, 20));
+        StackPane.setMargin(property, new Insets(0, 20, 0, 0));
+        StackPane.setAlignment(property, Pos.CENTER_RIGHT);
+
+        if (sortType.equals(Common.sortTypes[0])) {
+            String dateTime = new DateTimeUtil().getDateTimeConvertedFormat(mediaInformation.getTakenTime(), "yyyy:MM:dd HH:mm:ss", "dd-MM-yyyy HH:mm:ss");
+            property.setText(dateTime);
+        } else if (sortType.equals(Common.sortTypes[1])) {
+            property.setText(mediaController.fromSizeToString(mediaInformation.getCurrentFileSize()));
+        } else if (sortType.equals(Common.sortTypes[2])) {
+            property.setText(mediaInformation.getExtension());
+        }
+
         if (!mediaController.existFile(mediaInformation)) {
-            text.setTextFill(Color.rgb(200, 0, 0));
-
-            final ImageView loadingImg = drawIcon(Common.iconLoadingSearch);
-            stackPane.getChildren().add(loadingImg);
-            StackPane.setAlignment(loadingImg, Pos.CENTER_RIGHT);
-
-            final Text searchFix = new Text("Search&Fix");
-            searchFix.setFill(Color.rgb(0, 0, 200));
-            stackPane.getChildren().add(searchFix);
-            StackPane.setAlignment(searchFix, Pos.CENTER_RIGHT);
-
-            loadingImg.setVisible(false);
+            fileName.setTextFill(Color.rgb(200, 0, 0));
             searchFix.setVisible(true);
-
             if (mediaController.getMediaInfosSearching().get(fullPath) != null) {
-                ArrayList<Object> state = mediaController.getMediaInfosSearching().get(fullPath);
-                stackPane.getChildren().set(0, (Node) state.get(0));
-                stackPane.getChildren().set(1, (Node) state.get(1));
-                stackPane.getChildren().set(2, (Node) state.get(2));
-                searchFix.setVisible(false);
-                loadingImg.setVisible(true);
+                stackPane.getChildren().set(0, (Node) mediaController.getMediaInfosSearching().get(fullPath).get(0));
+                stackPane.getChildren().set(1, (Node) mediaController.getMediaInfosSearching().get(fullPath).get(1));
+                stackPane.getChildren().set(2, (Node) mediaController.getMediaInfosSearching().get(fullPath).get(2));
+                stackPane.getChildren().set(3, (Node) mediaController.getMediaInfosSearching().get(fullPath).get(3));
             }
+
             searchFix.setOnMouseClicked(event -> {
+                rotateTransition.play();
                 searchFix.setVisible(false);
                 loadingImg.setVisible(true);
-                RotateTransition rotateTransition = makeRotationOfImage(loadingImg);
-                rotateTransition.play();
 
                 ArrayList<Object> list = new ArrayList<>();
                 list.add(icon);
-                list.add(text);
+                list.add(fileName);
+                list.add(property);
                 list.add(loadingImg);
                 mediaController.addMediaInfosSearching(fullPath, list);
 
@@ -258,46 +300,36 @@ public class Component {
                 loadingService.setListener(new LoadingService.Listener() {
                     @Override
                     public void before() {
-                        boolean isMoved = mediaController.searchAndFix(mediaInformation);
+                        isMoved = mediaController.searchAndFix(mediaInformation);
+                    }
+
+                    @Override
+                    public void body() {
+                        loadingImg.setVisible(false);
                         if (isMoved) {
-                            rotateTransition.stop();
-                            text.setTextFill(Color.rgb(50, 200, 50));
+                            fileName.setTextFill(Color.rgb(50, 200, 50));
                             try {
                                 icon.setImage(new Image(new FileInputStream(fullPath)));
                             } catch (FileNotFoundException e) {
-                               System.out.println(e.getMessage());
+                                System.out.println(e.getMessage());
                             }
-                            loadingImg.setVisible(false);
                         } else {
-                            loadingImg.setVisible(false);
                             searchFix.setVisible(true);
                         }
                     }
 
                     @Override
-                    public void body() {
-
-                    }
-
-                    @Override
                     public void after() {
-
+                        mediaController.removeMediaInfosSearching(fullPath);
+                        rotateTransition.stop();
                     }
                 });
                 loadingService.service();
             });
-            searchFix.setOnMouseEntered(event -> {
-                searchFix.setFill(Color.rgb(0, 0, 0));
-                searchFix.setUnderline(true);
-            });
-            searchFix.setOnMouseExited(event -> {
-                searchFix.setFill(Color.rgb(0, 0, 200));
-                searchFix.setUnderline(false);
-            });
         } else if (!mediaController.existMetadata(mediaInformation)) {
-            text.setTextFill(Color.rgb(0, 0, 0));
+            fileName.setTextFill(Color.rgb(0, 0, 0));
         } else if (!mediaController.isEqualChecksum(mediaInformation)) {
-            text.setTextFill(Color.rgb(255, 150, 0));
+            fileName.setTextFill(Color.rgb(255, 150, 0));
         }
         return stackPane;
     }

@@ -73,7 +73,6 @@ public class MediaController {
 
             for (int i = 0; i < filesInLocation.size(); i++) {
                 String url = location + Common.childSlash + filesInLocation.get(i);
-                //     String extension = filesInLocation.get(i).substring(filesInLocation.get(i).indexOf(".") + 1);
                 MediaInformation mediaInformation = fileController.getInfoFromImage(url);
 
                 mediaInformation.setName(filesInLocation.get(i));
@@ -81,7 +80,6 @@ public class MediaController {
                 mediaInformation.setLocation(location);
                 mediaInformation.setDescription("");
                 mediaInformation.setModifier("");
-                mediaInformation.setTakenTime("");
                 mediaInformation.setModificationTime("");
                 mediaInformation.setCheckSum(fileController.getCheckSum(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName()));
 
@@ -90,7 +88,7 @@ public class MediaController {
 
             mediaInfos.sort((o1, o2) -> {
                 if (sortType.equals(Common.sortTypes[0])) {
-                    return o1.getExtension().compareTo(o2.getExtension());
+                    return o2.getTakenTime().compareTo(o1.getTakenTime());
                 } else if (sortType.equals(Common.sortTypes[1])) {
                     return (int) (o1.getOriginalFileSize() - o2.getOriginalFileSize());
                 } else if (sortType.equals(Common.sortTypes[2])) {
@@ -100,6 +98,10 @@ public class MediaController {
             });
         }
         return mediaInfos;
+    }
+
+    public MediaInformation getMediaInfoOfFile(String url){
+        return fileController.getInfoFromImage(url);
     }
 
     /**
@@ -170,7 +172,7 @@ public class MediaController {
             try {
                 new File(fullPath).createNewFile();
             } catch (IOException e) {
-               System.out.println(e.getMessage());
+                System.out.println(e.getMessage());
                 return false;
             }
         }
@@ -192,7 +194,7 @@ public class MediaController {
             FileUtils.copyFile(sourceFile, createdFile);
             return true;
         } catch (IOException e) {
-           System.out.println(e.getMessage());
+            System.out.println(e.getMessage());
         }
         return false;
     }
@@ -203,6 +205,10 @@ public class MediaController {
 
     public void addMediaInfosSearching(String fullPath, ArrayList<Object> list) {
         mediaInfosSearching.put(fullPath, list);
+    }
+
+    public void removeMediaInfosSearching(String fullPath) {
+        mediaInfosSearching.remove(fullPath);
     }
 
     /**
@@ -354,6 +360,7 @@ public class MediaController {
 
     /**
      * get jpeg from heic file
+     *
      * @param fullPath path of heic
      * @return path of temp file
      */
@@ -366,6 +373,24 @@ public class MediaController {
             }
         }
         return tempFileFullPath;
+    }
+
+    public String fromSizeToString(double size) {
+        double order = 1024;
+        String str = "";
+        int i = 0;
+        while (size > order) {
+            i++;
+            size /= order;
+        }
+        str = String.format("%.2f", size);
+        switch (i) {
+            case 0 -> str += " bytes";
+            case 1 -> str += " KB";
+            case 2 -> str += " MB";
+            case 3 -> str += " GB";
+        }
+        return str;
     }
 
 }
