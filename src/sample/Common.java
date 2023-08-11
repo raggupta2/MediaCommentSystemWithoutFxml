@@ -4,11 +4,12 @@ public class Common {
     public static String[] sortTypes = {"Date", "Size", "Type"};
     public static String[] extensionsImage = {"bmp", "jpg", "png"};
     public static String[] extensionsImageExtra = {"heic"};
-    public static String[] extensionsVideo = {"avi", "mp4", "3gp","mov"};
+    public static String[] extensionsVideo = {"avi", "mp4", "3gp", "mov"};
     public static String extensionsText = "txt";
     public static String metadataFolderName = ".ics";
-    public static String temp = "D:\\temp";
-    public static String childSlash = "\\";
+    public static String temp = "D:/temp";
+    public static String childSlash = "/";
+    public static String[] creationDate = {"date/time", "creation date"};
     public static double buttonImageSize = 25;
     public static double mediaHeight = 150;
     public static double mediaWidth = 150;
@@ -26,6 +27,7 @@ public class Common {
     public static String iconCamera = executionPath + "/" + "img/camera.png";
     public static String backgroundLogin = executionPath + "/" + "img/background-main.jpg";
     public static String backgroundMain = executionPath + "/" + "img/background-main.jpg";
+    public static String iconImage = executionPath + "/" + "img/icon-image.png";
     public static String iconFolder = executionPath + "/" + "img/icon-folder.png";
     public static String iconMissMedia = executionPath + "/" + "img/icon-miss-media.png";
     public static String iconVideo = executionPath + "/" + "img/icon-video1.png";

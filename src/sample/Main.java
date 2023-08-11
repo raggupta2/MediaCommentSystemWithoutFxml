@@ -36,7 +36,7 @@ public class Main extends Application {
                         "-fx-background-size: stretch"
         );
         Login login = new Login(root);
-        String version = "0.9.9";
+        String version = "0.9.9.1";
         primaryStage.setTitle("Image Comment System" + " " + version);
         Scene scene = new Scene(root, 800, 600);
         primaryStage.setScene(scene);

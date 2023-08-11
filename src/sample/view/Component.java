@@ -5,6 +5,7 @@ import javafx.animation.Interpolator;
 import javafx.animation.RotateTransition;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -19,24 +20,31 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.Java2DFrameConverter;
 import sample.Common;
 import sample.controller.MediaController;
 import sample.model.MediaInformation;
 import sample.utils.DateTimeUtil;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 public class Component {
 
     private boolean isMoved = false;
     private MediaController mediaController;
+    private DateTimeUtil dateTimeUtil;
 
     public Component() {
         mediaController = new MediaController();
+        dateTimeUtil = new DateTimeUtil();
     }
 
     /**
@@ -91,12 +99,12 @@ public class Component {
         Text text1 = new Text(str1);
         TextField text2 = new TextField(str2);
         text2.textProperty().addListener((observableValue, s, t1) -> {
-            System.out.println(text2.getText().length());
+            //      System.out.println(text2.getText().length());
             if (text2.getText().length() > 8000) {
                 String str = text2.getText().substring(0, 8000);
                 text2.setText(str);
             }
-            System.out.println(text2.getText().length());
+            //      System.out.println(text2.getText().length());
         });
         text1.setFont(new Font(12));
         text2.setFont(new Font(15));
@@ -120,12 +128,12 @@ public class Component {
     public TextArea drawTextArea(String str) {
         TextArea t = new TextArea(str);
         t.textProperty().addListener((observableValue, s, t1) -> {
-            System.out.println(t.getText().length());
+            //     System.out.println(t.getText().length());
             if (t.getText().length() > 8000) {
                 String str1 = t.getText().substring(0, 8000);
                 t.setText(str1);
             }
-            System.out.println(t.getText().length());
+            //    System.out.println(t.getText().length());
         });
         return t;
     }
@@ -232,7 +240,13 @@ public class Component {
     public StackPane drawItem(MediaInformation mediaInformation, String sortType) {
         StackPane stackPane = new StackPane();
         stackPane.setAlignment(Pos.CENTER_LEFT);
-        String fullPath = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
+        //   String fullPath = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
+        String fullPath = mediaController.getFullPath(mediaInformation);
+        if (mediaController.isImage(mediaInformation)) {
+            fullPath = Common.iconImage;
+        } else if (mediaController.isVideo(mediaInformation)) {
+            fullPath = Common.iconVideo;
+        }
         final ImageView icon = drawIcon(fullPath);
         final Label fileName = new Label(mediaInformation.getName());
         final Label property = new Label();
@@ -266,15 +280,26 @@ public class Component {
         StackPane.setAlignment(property, Pos.CENTER_RIGHT);
 
         if (sortType.equals(Common.sortTypes[0])) {
-            String dateTime = new DateTimeUtil().getDateTimeConvertedFormat(mediaInformation.getTakenTime(), "yyyy:MM:dd HH:mm:ss", "dd-MM-yyyy HH:mm:ss");
+           /* String strDate = "";
+            Date date = new Date();
+            strDate += date.getDate() + "-" + (date.getMonth() + 1) + "-" + (date.getYear() + 1900) + " ";
+            strDate += date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();*/
+
+            String strTime = "";
+            if (mediaInformation.getTakenTime().length() > 18) {
+                strTime = mediaInformation.getTakenTime().replace("T", " ").replace("-", ":").substring(0, 19);
+            }
+            //    System.out.println(strTime);
+
+            String dateTime = dateTimeUtil.getDateTimeConvertedFormat(strTime, "yyyy:MM:dd HH:mm:ss", "dd-MM-yyyy HH:mm:ss");
             property.setText(dateTime);
         } else if (sortType.equals(Common.sortTypes[1])) {
-            property.setText(mediaController.fromSizeToString(mediaInformation.getCurrentFileSize()));
+            property.setText(mediaController.fromSizeToString(mediaInformation.getOriginalFileSize()));
         } else if (sortType.equals(Common.sortTypes[2])) {
             property.setText(mediaInformation.getExtension());
         }
 
-        if (!mediaController.existFile(mediaInformation)) {
+        if (!mediaController.existFile(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName())) {
             fileName.setTextFill(Color.rgb(200, 0, 0));
             searchFix.setVisible(true);
             if (mediaController.getMediaInfosSearching().get(fullPath) != null) {
@@ -294,7 +319,7 @@ public class Component {
                 list.add(fileName);
                 list.add(property);
                 list.add(loadingImg);
-                mediaController.addMediaInfosSearching(fullPath, list);
+                mediaController.addMediaInfosSearching(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName(), list);
 
                 LoadingService loadingService = new LoadingService();
                 loadingService.setListener(new LoadingService.Listener() {
@@ -309,7 +334,7 @@ public class Component {
                         if (isMoved) {
                             fileName.setTextFill(Color.rgb(50, 200, 50));
                             try {
-                                icon.setImage(new Image(new FileInputStream(fullPath)));
+                                icon.setImage(new Image(new FileInputStream(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName())));
                             } catch (FileNotFoundException e) {
                                 System.out.println(e.getMessage());
                             }
@@ -320,7 +345,7 @@ public class Component {
 
                     @Override
                     public void after() {
-                        mediaController.removeMediaInfosSearching(fullPath);
+                        mediaController.removeMediaInfosSearching(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName());
                         rotateTransition.stop();
                     }
                 });
@@ -348,5 +373,15 @@ public class Component {
         rotateTransition.setCycleCount(Animation.INDEFINITE);
         rotateTransition.setInterpolator(Interpolator.LINEAR);
         return rotateTransition;
+    }
+
+    public Image getImage(String url) {
+        Image image = null;
+        try {
+            image = new Image(new FileInputStream(url));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return image;
     }
 }

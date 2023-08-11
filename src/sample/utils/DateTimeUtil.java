@@ -16,11 +16,11 @@ public class DateTimeUtil {
         try {
 
             LocalDateTime ld = LocalDateTime.parse(dtString, DateTimeFormatter.ofPattern(inFormatString, Locale.US));
-            System.out.println(ld);
+      //      System.out.println(ld);
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(outFormatString);
 //        LocalDateTime parsedDate = LocalDateTime.parse(ld.toString(), formatter);
-            System.out.println(ld.format(formatter));
+   //         System.out.println(ld.format(formatter));
             return ld.format(formatter);
         } catch (Exception e) {
 

@@ -12,9 +12,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -76,11 +73,14 @@ public class ImageManagement {
     private StackPane[] stackPanes;
     private String selectedFilePath;
     private VBox topLeftBox;
+    private FrameUtil frameUtil;
+    private Image image;
 
 
     public ImageManagement(VBox vBox, User user) {
         this.mediaController = new MediaController();
         this.component = new Component();
+        this.frameUtil = new FrameUtil();
         vBox.getChildren().clear();
 
         StackPane stackPane = new StackPane();
@@ -240,7 +240,7 @@ public class ImageManagement {
         createRepo.setOnMouseClicked(event -> {
             boolean isCreated = mediaController.createRepo(openedLocation);
             if (isCreated) {
-                createRepo.setDisable(mediaController.getSplitLocationByIcs(openedLocation) != null);
+                createRepo.setDisable(mediaController.existIcs(openedLocation));
                 saveMetaData.setDisable(mediaController.getSplitLocationByIcs(openedLocation) == null);
             }
         });
@@ -254,7 +254,6 @@ public class ImageManagement {
 
         saveMetaData.setOnMouseClicked(event -> {
             selectedInfo.setModifier(currentUser.getName());
-            selectedInfo.setModificationTime(new Date().toString());
             selectedInfo.setDescription(description.getText());
             selectedInfo.setLatitude(latitude.getText());
             selectedInfo.setLongitude(longitude.getText());
@@ -283,7 +282,8 @@ public class ImageManagement {
         }
         File selectDialog = chooser.showDialog(window);
         if (selectDialog != null) {
-            openedLocation = selectDialog.getAbsolutePath();
+            //   openedLocation = selectDialog.getAbsolutePath().endsWith(Common.childSlash) ? selectDialog.getAbsolutePath().substring(0, selectDialog.getAbsolutePath().length() - 1) : selectDialog.getAbsolutePath();
+            openedLocation = selectDialog.getAbsolutePath().replace("\\", Common.childSlash);
             gotoNewLocation();
         }
     }
@@ -358,7 +358,9 @@ public class ImageManagement {
      */
     private void updateList(String location) {
         emptyDetail();
-        createRepo.setDisable(mediaController.getSplitLocationByIcs(location) != null);
+        if (currentUser.getRole() == 0) {
+            createRepo.setDisable(mediaController.existIcs(location));
+        }
         saveMetaData.setDisable(true);
         listView.getItems().clear();
         locationView.setText(openedLocation);
@@ -382,7 +384,7 @@ public class ImageManagement {
                     item.setOnMouseClicked(event -> {
                         selectedInfo = mediaInformation;
                         if (currentUser.getRole() == 0) {
-                            delMetaData.setDisable(mediaController.existFile(mediaInformation));
+                            delMetaData.setDisable(mediaController.existFile(mediaController.getFullPath(mediaInformation)));
                         }
                         updateDetail(mediaInfos.get(index));
                     });
@@ -400,7 +402,7 @@ public class ImageManagement {
                     stackPanes[mediaInfos.size() + i] = stackPane;
                     StackPane.setMargin(text, new Insets(0, 0, 0, 20));
                     stackPane.setOnMouseClicked(event -> {
-                        openedLocation += (openedLocation.endsWith("\\") ? "" : Common.childSlash) + directory;
+                        openedLocation += (openedLocation.endsWith(Common.childSlash) ? "" : Common.childSlash) + directory;
                         gotoNewLocation();
                     });
                 }
@@ -428,11 +430,11 @@ public class ImageManagement {
         if (isLoading) {
             rotateTransition.play();
             loadingPane.setVisible(true);
-            System.out.println("start");
+            //   System.out.println("start");
         } else {
             rotateTransition.stop();
             loadingPane.setVisible(false);
-            System.out.println("end");
+            //   System.out.println("end");
         }
     }
 
@@ -450,7 +452,8 @@ public class ImageManagement {
         originalFileSize.setText("");
         currentFileSize.setText("");
         description.setText("");
-        imageView.setImage(null);
+        image = null;
+        imageView.setImage(image);
         checksum.setText("");
     }
 
@@ -464,9 +467,9 @@ public class ImageManagement {
         selectedFilePath = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
         saveMetaData.setDisable(mediaController.getSplitLocationByIcs(openedLocation) == null);
         if (currentUser.getRole() == 0) {
-            delMetaData.setDisable(mediaController.existFile(mediaInformation));
+            delMetaData.setDisable(mediaController.existFile(mediaController.getFullPath(mediaInformation)));
         }
-        if (mediaController.existFile(mediaInformation) && !mediaController.isEqualChecksum(mediaInformation)) {
+        if (mediaController.existFile(mediaController.getFullPath(mediaInformation)) && !mediaController.isEqualChecksum(mediaInformation)) {
             Text text = new Text(Common.messageForNotChecksum);
             text.setFill(Color.rgb(255, 0, 0));
             //   text.setFont(new Font(20));
@@ -486,11 +489,15 @@ public class ImageManagement {
             @Override
             public void before() {
                 appearLoading(true);
-                if (Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase())) {
-                    selectedFilePath = mediaController.getJpegFromHEIC(selectedFilePath);
-                }
-                if (Arrays.asList(Common.extensionsVideo).contains(mediaInformation.getExtension().toLowerCase())) {
-                    imageView.setImage(new FrameUtil().getFrame(selectedFilePath));
+                if (mediaController.isImage(mediaInformation)) {
+                    if (Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase())) {
+                        selectedFilePath = mediaController.getJpegFromHEIC(selectedFilePath);
+                    }
+                    if (mediaController.existFile(selectedFilePath)) {
+                        image = component.getImage(selectedFilePath);
+                    }
+                } else if (mediaController.isVideo(mediaInformation)) {
+                    image = frameUtil.getFrame(selectedFilePath);
                 }
             }
 
@@ -499,31 +506,25 @@ public class ImageManagement {
                 if (selectedFilePath == null) {
                     drawError("The Temp directory does not exist");
                 } else {
-                    try {
-                        if (Arrays.asList(Common.extensionsImage).contains(mediaInformation.getExtension().toLowerCase()) || Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase())) {
-                            imageView.setImage(new Image(new FileInputStream(selectedFilePath)));
-                        }
-                        imageView.setCursor(Cursor.HAND);
-                        imageView.setPreserveRatio(true);
+                    imageView.setImage(image);
+                    imageView.setCursor(Cursor.HAND);
+                    imageView.setPreserveRatio(true);
 
-                        imageView.setFitWidth(mainPane.widthProperty().doubleValue() / 3);
-                        mainPane.widthProperty().addListener((observable, oldValue, newValue) -> {
-                            imageView.setFitWidth(newValue.doubleValue() / 3);
-                        });
-                        imageView.setOnMouseClicked(event -> {
-                            if (event.getButton().equals(MouseButton.PRIMARY)) {
-                                if (event.getClickCount() == 2) {
-                                    if (Arrays.asList(Common.extensionsVideo).contains(mediaInformation.getExtension().toLowerCase())) {
-                                        playVideo();
-                                    } else if (Arrays.asList(Common.extensionsImage).contains(mediaInformation.getExtension().toLowerCase()) || Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase())) {
-                                        showImage();
-                                    }
+                    imageView.setFitWidth(mainPane.widthProperty().doubleValue() / 3);
+                    mainPane.widthProperty().addListener((observable, oldValue, newValue) -> {
+                        imageView.setFitWidth(newValue.doubleValue() / 3);
+                    });
+                    imageView.setOnMouseClicked(event -> {
+                        if (event.getButton().equals(MouseButton.PRIMARY)) {
+                            if (event.getClickCount() == 2) {
+                                if (mediaController.isVideo(mediaInformation)) {
+                                    playVideo();
+                                } else if (mediaController.isImage(mediaInformation)) {
+                                    showImage();
                                 }
                             }
-                        });
-                    } catch (FileNotFoundException e) {
-                        //   throw new RuntimeException(e);
-                    }
+                        }
+                    });
                 }
             }
 
@@ -540,7 +541,7 @@ public class ImageManagement {
         try {
             Process start = pb.start();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.out.println(e.getMessage());
         }
     }
 

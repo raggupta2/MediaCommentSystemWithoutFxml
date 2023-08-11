@@ -4,10 +4,15 @@ package sample.controller;
 import org.apache.commons.io.FileUtils;
 import sample.Common;
 import sample.model.MediaInformation;
+import sample.utils.DateTimeUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 
 public class MediaController {
@@ -157,6 +162,12 @@ public class MediaController {
      * @return if saved, return true;
      */
     public boolean saveMetadata(MediaInformation information) {
+        String strCurrentDate = new Date().toString();
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+
+        information.setModificationTime(new DateTimeUtil().getDateTimeConvertedFormat(dtf.format(now),"yyyy/MM/dd HH:mm:ss","yyyy:MM:dd HH:mm:ss"));
         String[] str = getSplitLocationByIcs(information.getLocation());
         String[] foldersUnderIcs = str[1].replace(Common.childSlash, ":").split(":");
         String urlDirectory = str[0] + Common.childSlash + Common.metadataFolderName;
@@ -187,7 +198,7 @@ public class MediaController {
      */
     public boolean searchAndFix(MediaInformation mediaInformation) {
         String fullPathOfFileSearched = fileSearchEngine.searchFile(mediaInformation.getName(), mediaInformation.getCheckSum());
-        System.out.println(fullPathOfFileSearched);
+      //  System.out.println(fullPathOfFileSearched);
         File sourceFile = new File(fullPathOfFileSearched);
         File createdFile = new File(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName());
         try {
@@ -207,6 +218,10 @@ public class MediaController {
         mediaInfosSearching.put(fullPath, list);
     }
 
+    public String getFullPath(MediaInformation mediaInformation){
+        return mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName();
+    }
+
     public void removeMediaInfosSearching(String fullPath) {
         mediaInfosSearching.remove(fullPath);
     }
@@ -214,21 +229,21 @@ public class MediaController {
     /**
      * whether it is image or not
      *
-     * @param extension current selected file extension
+     * @param mediaInformation current selected information
      * @return if exist, true
      */
-    public boolean isImage(String extension) {
-        return Arrays.asList(Common.extensionsImage).contains(extension);
+    public boolean isImage(MediaInformation mediaInformation) {
+        return Arrays.asList(Common.extensionsImage).contains(mediaInformation.getExtension().toLowerCase()) || Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase());
     }
 
     /**
      * whether it is video or not
      *
-     * @param extension current selected file extension
+     * @param mediaInformation current selected information
      * @return if exist, true
      */
-    public boolean isVideo(String extension) {
-        return Arrays.asList(Common.extensionsVideo).contains(extension);
+    public boolean isVideo(MediaInformation mediaInformation) {
+        return Arrays.asList(Common.extensionsVideo).contains(mediaInformation.getExtension().toLowerCase());
     }
 
     /**
@@ -257,12 +272,23 @@ public class MediaController {
     /**
      * whether file exist in folder or not
      *
-     * @param information current selected info
+     * @param fullPath current selected file
      * @return if exist, true
      */
-    public boolean existFile(MediaInformation information) {
-        File f = new File(information.getLocation() + Common.childSlash + information.getName());
+    public boolean existFile(String fullPath) {
+        File f = new File(fullPath);
         return f.exists() && !f.isDirectory();
+    }
+
+    /**
+     * whether file exist in folder or not
+     *
+     * @param path current location
+     * @return if exist, true
+     */
+    public boolean existIcs(String path) {
+        File f = new File(path + Common.childSlash + Common.metadataFolderName);
+        return f.exists() && f.isDirectory();
     }
 
     /**
