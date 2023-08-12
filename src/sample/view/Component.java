@@ -242,12 +242,13 @@ public class Component {
         stackPane.setAlignment(Pos.CENTER_LEFT);
         //   String fullPath = mediaInformation.getLocation() + (mediaInformation.getLocation().endsWith(Common.childSlash) ? "" : Common.childSlash) + mediaInformation.getName();
         String fullPath = mediaController.getFullPath(mediaInformation);
+        String iconPath = fullPath;
         if (mediaController.isImage(mediaInformation)) {
-            fullPath = Common.iconImage;
+            iconPath = Common.iconImage;
         } else if (mediaController.isVideo(mediaInformation)) {
-            fullPath = Common.iconVideo;
+            iconPath = Common.iconVideo;
         }
-        final ImageView icon = drawIcon(fullPath);
+        final ImageView icon = drawIcon(iconPath);
         final Label fileName = new Label(mediaInformation.getName());
         final Label property = new Label();
         final ImageView searchFix = drawIcon(Common.iconSearch);
@@ -299,14 +300,17 @@ public class Component {
             property.setText(mediaInformation.getExtension());
         }
 
-        if (!mediaController.existFile(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName())) {
+        if (!mediaController.existFile(mediaController.getFullPath(mediaInformation))) {
             fileName.setTextFill(Color.rgb(200, 0, 0));
-            searchFix.setVisible(true);
             if (mediaController.getMediaInfosSearching().get(fullPath) != null) {
                 stackPane.getChildren().set(0, (Node) mediaController.getMediaInfosSearching().get(fullPath).get(0));
                 stackPane.getChildren().set(1, (Node) mediaController.getMediaInfosSearching().get(fullPath).get(1));
                 stackPane.getChildren().set(2, (Node) mediaController.getMediaInfosSearching().get(fullPath).get(2));
                 stackPane.getChildren().set(3, (Node) mediaController.getMediaInfosSearching().get(fullPath).get(3));
+                stackPane.getChildren().set(4, (Node) mediaController.getMediaInfosSearching().get(fullPath).get(4));
+            } else {
+                searchFix.setVisible(true);
+                loadingImg.setVisible(false);
             }
 
             searchFix.setOnMouseClicked(event -> {
@@ -318,8 +322,9 @@ public class Component {
                 list.add(icon);
                 list.add(fileName);
                 list.add(property);
+                list.add(searchFix);
                 list.add(loadingImg);
-                mediaController.addMediaInfosSearching(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName(), list);
+                mediaController.addMediaInfosSearching(mediaController.getFullPath(mediaInformation), list);
 
                 LoadingService loadingService = new LoadingService();
                 loadingService.setListener(new LoadingService.Listener() {
@@ -334,7 +339,7 @@ public class Component {
                         if (isMoved) {
                             fileName.setTextFill(Color.rgb(50, 200, 50));
                             try {
-                                icon.setImage(new Image(new FileInputStream(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName())));
+                                icon.setImage(new Image(new FileInputStream(mediaController.getFullPath(mediaInformation))));
                             } catch (FileNotFoundException e) {
                                 System.out.println(e.getMessage());
                             }
@@ -345,7 +350,7 @@ public class Component {
 
                     @Override
                     public void after() {
-                        mediaController.removeMediaInfosSearching(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName());
+                        mediaController.removeMediaInfosSearching(mediaController.getFullPath(mediaInformation));
                         rotateTransition.stop();
                     }
                 });

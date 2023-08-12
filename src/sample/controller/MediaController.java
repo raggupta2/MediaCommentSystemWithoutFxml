@@ -86,7 +86,7 @@ public class MediaController {
                 mediaInformation.setDescription("");
                 mediaInformation.setModifier("");
                 mediaInformation.setModificationTime("");
-                mediaInformation.setCheckSum(fileController.getCheckSum(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName()));
+                mediaInformation.setCheckSum(fileController.getCheckSum(getFullPath(mediaInformation)));
 
                 mediaInfos.add(mediaInformation);
             }
@@ -200,7 +200,7 @@ public class MediaController {
         String fullPathOfFileSearched = fileSearchEngine.searchFile(mediaInformation.getName(), mediaInformation.getCheckSum());
       //  System.out.println(fullPathOfFileSearched);
         File sourceFile = new File(fullPathOfFileSearched);
-        File createdFile = new File(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName());
+        File createdFile = new File(getFullPath(mediaInformation));
         try {
             FileUtils.copyFile(sourceFile, createdFile);
             return true;

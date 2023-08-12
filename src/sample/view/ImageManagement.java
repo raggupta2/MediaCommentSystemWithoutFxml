@@ -19,7 +19,6 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import sample.Common;
-import sample.controller.FileController;
 import sample.controller.MediaController;
 import sample.model.MediaInformation;
 import sample.model.User;
@@ -28,7 +27,6 @@ import sample.utils.FrameUtil;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 
 public class ImageManagement {
 
@@ -106,7 +104,7 @@ public class ImageManagement {
         mainPane.setAlignment(Pos.TOP_CENTER);
         drawMediaManagement();
 
-       /* openedLocation = "F:\\z---exam";
+       /* openedLocation = "F:/z---exam";
         updateList(openedLocation);*/
     }
 
@@ -453,7 +451,7 @@ public class ImageManagement {
         currentFileSize.setText("");
         description.setText("");
         image = null;
-        imageView.setImage(image);
+        imageView.setImage(null);
         checksum.setText("");
     }
 
@@ -537,7 +535,7 @@ public class ImageManagement {
     }
 
     public void playVideo() {
-        ProcessBuilder pb = new ProcessBuilder(Common.pathVlc, selectedFilePath);
+        ProcessBuilder pb = new ProcessBuilder(Common.pathVlc, selectedFilePath.replace(Common.childSlash, "\\"));
         try {
             Process start = pb.start();
         } catch (IOException e) {
