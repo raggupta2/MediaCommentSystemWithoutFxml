@@ -18,6 +18,7 @@ import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 public class FileController {
@@ -80,7 +81,7 @@ public class FileController {
         mediaInformation.setName((String) map.get("name"));
         mediaInformation.setExtension((String) map.get("extension"));
         mediaInformation.setLocation((String) map.get("location"));
-        mediaInformation.setDescription((String) map.get("description"));
+        mediaInformation.setDescription(((String) map.get("description")).replace("\\\"", "\""));
         mediaInformation.setLatitude(((String) map.get("latitude")).replace("#", "\""));
         mediaInformation.setLongitude(((String) map.get("longitude")).replace("#", "\""));
         mediaInformation.setGoogleMapUrl((String) map.get("googleMapUrl"));
@@ -106,7 +107,7 @@ public class FileController {
         str += "\"name\":\"" + information.getName() + "\",";
         str += "\"extension\":\"" + information.getExtension() + "\",";
         str += "\"location\":\"" + information.getLocation() + "\",";
-        str += "\"description\":\"" + information.getDescription() + "\",";
+        str += "\"description\":\"" + information.getDescription().replace("\"", "\\\"") + "\",";
         str += "\"latitude\":\"" + (information.getLatitude() != null ? information.getLatitude().replace("\"", "#") : "") + "\",";
         str += "\"longitude\":\"" + (information.getLongitude() != null ? information.getLongitude().replace("\"", "#") : "") + "\",";
         str += "\"googleMapUrl\":\"" + information.getGoogleMapUrl() + "\",";
@@ -134,7 +135,7 @@ public class FileController {
             for (Directory directory : metadata.getDirectories()) {
                 //    System.out.println(directory.getName());
                 for (Tag tag : directory.getTags()) {
-                    //     System.out.println(tag.getTagName() + " : " + tag.getDescription());
+                  //   System.out.println(tag.getTagName() + " : " + tag.getDescription());
 
                     if (tag.getTagName().toLowerCase().equals("GPS Latitude".toLowerCase())) {
                         mediaInformation.setLatitude(tag.getDescription());
@@ -145,15 +146,15 @@ public class FileController {
                     if (tag.getTagName().toLowerCase().equals("GPS Google map url".toLowerCase())) {
                         mediaInformation.setGoogleMapUrl(tag.getDescription());
                     }
-                    if (tag.getTagName().toLowerCase().equals("Date/Time".toLowerCase())) {
+                    if (Arrays.asList(Common.creationDate).contains(tag.getTagName().toLowerCase())) {
                         mediaInformation.setTakenTime(tag.getDescription());
                     }
                     if (tag.getTagName().toLowerCase().equals("File Size".toLowerCase())) {
                         mediaInformation.setOriginalFileSize(Double.parseDouble(tag.getDescription().substring(0, tag.getDescription().length() - 5)));
                     }
-                    if (tag.getTagName().toLowerCase().equals("File Size".toLowerCase())) {
+                   /* if (tag.getTagName().toLowerCase().equals("File Size".toLowerCase())) {
                         mediaInformation.setCurrentFileSize(Double.parseDouble(tag.getDescription().substring(0, tag.getDescription().length() - 5)));
-                    }
+                    }*/
                     if (tag.getTagName().toLowerCase().equals("JPEG Quality".toLowerCase())) {
                         mediaInformation.setQualityRating(Integer.parseInt(tag.getDescription().substring(0, 1)));
                     }

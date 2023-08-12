@@ -4,10 +4,15 @@ package sample.controller;
 import org.apache.commons.io.FileUtils;
 import sample.Common;
 import sample.model.MediaInformation;
+import sample.utils.DateTimeUtil;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 
 public class MediaController {
@@ -73,7 +78,6 @@ public class MediaController {
 
             for (int i = 0; i < filesInLocation.size(); i++) {
                 String url = location + Common.childSlash + filesInLocation.get(i);
-                //     String extension = filesInLocation.get(i).substring(filesInLocation.get(i).indexOf(".") + 1);
                 MediaInformation mediaInformation = fileController.getInfoFromImage(url);
 
                 mediaInformation.setName(filesInLocation.get(i));
@@ -81,16 +85,15 @@ public class MediaController {
                 mediaInformation.setLocation(location);
                 mediaInformation.setDescription("");
                 mediaInformation.setModifier("");
-                mediaInformation.setTakenTime("");
                 mediaInformation.setModificationTime("");
-                mediaInformation.setCheckSum(fileController.getCheckSum(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName()));
+                mediaInformation.setCheckSum(fileController.getCheckSum(getFullPath(mediaInformation)));
 
                 mediaInfos.add(mediaInformation);
             }
 
             mediaInfos.sort((o1, o2) -> {
                 if (sortType.equals(Common.sortTypes[0])) {
-                    return o1.getExtension().compareTo(o2.getExtension());
+                    return o2.getTakenTime().compareTo(o1.getTakenTime());
                 } else if (sortType.equals(Common.sortTypes[1])) {
                     return (int) (o1.getOriginalFileSize() - o2.getOriginalFileSize());
                 } else if (sortType.equals(Common.sortTypes[2])) {
@@ -100,6 +103,10 @@ public class MediaController {
             });
         }
         return mediaInfos;
+    }
+
+    public MediaInformation getMediaInfoOfFile(String url){
+        return fileController.getInfoFromImage(url);
     }
 
     /**
@@ -155,6 +162,12 @@ public class MediaController {
      * @return if saved, return true;
      */
     public boolean saveMetadata(MediaInformation information) {
+        String strCurrentDate = new Date().toString();
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+
+        information.setModificationTime(new DateTimeUtil().getDateTimeConvertedFormat(dtf.format(now),"yyyy/MM/dd HH:mm:ss","yyyy:MM:dd HH:mm:ss"));
         String[] str = getSplitLocationByIcs(information.getLocation());
         String[] foldersUnderIcs = str[1].replace(Common.childSlash, ":").split(":");
         String urlDirectory = str[0] + Common.childSlash + Common.metadataFolderName;
@@ -170,7 +183,7 @@ public class MediaController {
             try {
                 new File(fullPath).createNewFile();
             } catch (IOException e) {
-               System.out.println(e.getMessage());
+                System.out.println(e.getMessage());
                 return false;
             }
         }
@@ -185,14 +198,14 @@ public class MediaController {
      */
     public boolean searchAndFix(MediaInformation mediaInformation) {
         String fullPathOfFileSearched = fileSearchEngine.searchFile(mediaInformation.getName(), mediaInformation.getCheckSum());
-        System.out.println(fullPathOfFileSearched);
+      //  System.out.println(fullPathOfFileSearched);
         File sourceFile = new File(fullPathOfFileSearched);
-        File createdFile = new File(mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName());
+        File createdFile = new File(getFullPath(mediaInformation));
         try {
             FileUtils.copyFile(sourceFile, createdFile);
             return true;
         } catch (IOException e) {
-           System.out.println(e.getMessage());
+            System.out.println(e.getMessage());
         }
         return false;
     }
@@ -205,24 +218,32 @@ public class MediaController {
         mediaInfosSearching.put(fullPath, list);
     }
 
+    public String getFullPath(MediaInformation mediaInformation){
+        return mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName();
+    }
+
+    public void removeMediaInfosSearching(String fullPath) {
+        mediaInfosSearching.remove(fullPath);
+    }
+
     /**
      * whether it is image or not
      *
-     * @param extension current selected file extension
+     * @param mediaInformation current selected information
      * @return if exist, true
      */
-    public boolean isImage(String extension) {
-        return Arrays.asList(Common.extensionsImage).contains(extension);
+    public boolean isImage(MediaInformation mediaInformation) {
+        return Arrays.asList(Common.extensionsImage).contains(mediaInformation.getExtension().toLowerCase()) || Arrays.asList(Common.extensionsImageExtra).contains(mediaInformation.getExtension().toLowerCase());
     }
 
     /**
      * whether it is video or not
      *
-     * @param extension current selected file extension
+     * @param mediaInformation current selected information
      * @return if exist, true
      */
-    public boolean isVideo(String extension) {
-        return Arrays.asList(Common.extensionsVideo).contains(extension);
+    public boolean isVideo(MediaInformation mediaInformation) {
+        return Arrays.asList(Common.extensionsVideo).contains(mediaInformation.getExtension().toLowerCase());
     }
 
     /**
@@ -251,12 +272,23 @@ public class MediaController {
     /**
      * whether file exist in folder or not
      *
-     * @param information current selected info
+     * @param fullPath current selected file
      * @return if exist, true
      */
-    public boolean existFile(MediaInformation information) {
-        File f = new File(information.getLocation() + Common.childSlash + information.getName());
+    public boolean existFile(String fullPath) {
+        File f = new File(fullPath);
         return f.exists() && !f.isDirectory();
+    }
+
+    /**
+     * whether file exist in folder or not
+     *
+     * @param path current location
+     * @return if exist, true
+     */
+    public boolean existIcs(String path) {
+        File f = new File(path + Common.childSlash + Common.metadataFolderName);
+        return f.exists() && f.isDirectory();
     }
 
     /**
@@ -354,6 +386,7 @@ public class MediaController {
 
     /**
      * get jpeg from heic file
+     *
      * @param fullPath path of heic
      * @return path of temp file
      */
@@ -366,6 +399,24 @@ public class MediaController {
             }
         }
         return tempFileFullPath;
+    }
+
+    public String fromSizeToString(double size) {
+        double order = 1024;
+        String str = "";
+        int i = 0;
+        while (size > order) {
+            i++;
+            size /= order;
+        }
+        str = String.format("%.2f", size);
+        switch (i) {
+            case 0 -> str += " bytes";
+            case 1 -> str += " KB";
+            case 2 -> str += " MB";
+            case 3 -> str += " GB";
+        }
+        return str;
     }
 
 }

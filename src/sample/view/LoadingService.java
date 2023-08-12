@@ -31,7 +31,11 @@ public class LoadingService {
                     @Override
                     protected Void call() throws Exception {
                         //Background work
-                        listener.before();
+                        try {
+                            listener.before();
+                        } catch (Exception e) {
+                            System.out.println("before:" + e.getMessage());
+                        }
                         final CountDownLatch latch = new CountDownLatch(1);
                         Platform.runLater(new Runnable() {
                             @Override
@@ -39,6 +43,8 @@ public class LoadingService {
                                 try {
                                     //FX Stuff done here
                                     listener.body();
+                                } catch (Exception e) {
+                                    System.out.println("body:" + e.getMessage());
                                 } finally {
                                     latch.countDown();
                                 }
@@ -46,7 +52,11 @@ public class LoadingService {
                         });
                         latch.await();
                         //Keep with the background work
-                        listener.after();
+                        try {
+                            listener.after();
+                        } catch (Exception e) {
+                            System.out.println("after:" + e.getMessage());
+                        }
                         return null;
                     }
                 };
