@@ -81,7 +81,7 @@ public class MediaController {
                 MediaInformation mediaInformation = fileController.getInfoFromImage(url);
 
                 mediaInformation.setName(filesInLocation.get(i));
-                mediaInformation.setExtension(filesInLocation.get(i).substring(filesInLocation.get(i).indexOf(".") + 1));
+                mediaInformation.setExtension(filesInLocation.get(i).substring(filesInLocation.get(i).lastIndexOf(".") + 1));
                 mediaInformation.setLocation(location);
                 mediaInformation.setDescription("");
                 mediaInformation.setModifier("");
