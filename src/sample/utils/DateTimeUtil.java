@@ -36,8 +36,6 @@ public class DateTimeUtil {
         inputPatterns.add(new SimpleDateFormat("yyyyMMdd"));
         inputPatterns.add(new SimpleDateFormat("yyyy-MM-dd"));
         inputPatterns.add(new SimpleDateFormat("yyyy-MM-ddZ"));
-        inputPatterns.add(new SimpleDateFormat("HH:mm:ss"));
-        inputPatterns.add(new SimpleDateFormat("HH:mm:ssZ"));
         inputPatterns.add(new SimpleDateFormat("d MMM yyyy HH:mm"));
         inputPatterns.add(new SimpleDateFormat("yyyy.MM.dd G HH:mm:ss z"));
         inputPatterns.add(new SimpleDateFormat("EEE, MMM d, ''yy"));
@@ -49,22 +47,24 @@ public class DateTimeUtil {
         inputPatterns.add(new SimpleDateFormat("yyMMddHHmmssZ"));
         inputPatterns.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
         inputPatterns.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
+        inputPatterns.add(new SimpleDateFormat("yyyy:MM:dd HH:mm:ss"));
         inputPatterns.add(new SimpleDateFormat("YYYY-'W'ww-u"));
         for (SimpleDateFormat pattern : inputPatterns) {
 //            pattern.setLenient(false);
             try {
                 // Take a try
                 Date ret = new Date(pattern.parse(dt).getTime());
-           //     System.out.println("matched pattern:" + pattern.toPattern());
+          //    System.out.println("matched pattern:" + pattern.toPattern());
                 return outPattern.format(ret);
 
 
             } catch (ParseException pe) {
                 // Loop on
-//                System.out.println("pattern:" + pattern.toPattern() + ", error: " + pe.getMessage());
+          //   System.out.println("pattern:" + pattern.toPattern() + ", error: " + pe.getMessage());
+              //  return dt;
             }
         }
         System.err.println("No known Date format found: " + dt);
-        return "";
+        return dt;
     }
 }
