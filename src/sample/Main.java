@@ -36,8 +36,7 @@ public class Main extends Application {
                         "-fx-background-size: stretch"
         );
         Login login = new Login(root);
-        String version = "0.9.9.2";
-        primaryStage.setTitle("Image Comment System" + " " + version);
+        primaryStage.setTitle(Common.appName + " " + Common.version);
         Scene scene = new Scene(root, 800, 600);
         primaryStage.setScene(scene);
         primaryStage.getIcons().add(new Image(new FileInputStream(Common.iconCamera)));

@@ -281,18 +281,7 @@ public class Component {
         StackPane.setAlignment(property, Pos.CENTER_RIGHT);
 
         if (sortType.equals(Common.sortTypes[0])) {
-           /* String strDate = "";
-            Date date = new Date();
-            strDate += date.getDate() + "-" + (date.getMonth() + 1) + "-" + (date.getYear() + 1900) + " ";
-            strDate += date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();*/
-
-            String strTime = "";
-            if (mediaInformation.getTakenTime().length() > 18) {
-                strTime = mediaInformation.getTakenTime().replace("T", " ").replace("-", ":").substring(0, 19);
-            }
-            //    System.out.println(strTime);
-
-            String dateTime = dateTimeUtil.getDateTimeConvertedFormat(strTime, "yyyy:MM:dd HH:mm:ss", "dd-MM-yyyy HH:mm:ss");
+            String dateTime = dateTimeUtil.convertDateTimeFormat(mediaInformation.getTakenTime(), "dd-MM-yyyy HH:mm:ss");
             property.setText(dateTime);
         } else if (sortType.equals(Common.sortTypes[1])) {
             property.setText(mediaController.fromSizeToString(mediaInformation.getOriginalFileSize()));

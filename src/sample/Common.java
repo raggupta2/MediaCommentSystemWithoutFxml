@@ -1,6 +1,8 @@
 package sample;
 
 public class Common {
+    public static String appName = "Image Comment System" ;
+    public static String version = "0.9.9.5";
     public static String[] sortTypes = {"Date", "Size", "Type"};
     public static String[] extensionsImage = {"bmp", "jpg", "png"};
     public static String[] extensionsImageExtra = {"heic"};

@@ -8,6 +8,7 @@ import sample.utils.DateTimeUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -58,14 +59,12 @@ public class MediaController {
     public ArrayList<MediaInformation> getMediaInfos(String location, String sortType) {
         ArrayList<MediaInformation> mediaInfos = new ArrayList<>();
         if (location != null) {
-            File[] filesNoMeta = new File(location).listFiles();
-            ArrayList<String> filesInLocation = getFileListFiltered(filesNoMeta, Common.extensionsImage, Common.extensionsVideo);
+            ArrayList<String> filesInLocation = getFileListFiltered(location, Common.extensionsImage, Common.extensionsVideo);
 
             String[] str = getSplitLocationByIcs(location);
             if (str != null) {
                 String locationMeta = str[0] + Common.childSlash + Common.metadataFolderName + str[1];
-                File[] filesMeta = new File(locationMeta).listFiles();
-                ArrayList<String> filesInLocationMeta = getFileListFiltered(filesMeta, new String[]{Common.extensionsText}, new String[]{});
+                ArrayList<String> filesInLocationMeta = getFileListFiltered(locationMeta, new String[]{Common.extensionsText}, new String[]{});
                 mediaInfos = fileController.getLastInfosOfEachMedia(locationMeta, filesInLocationMeta);
 
                 for (int i = 0; i < filesInLocation.size(); i++) {
@@ -105,7 +104,7 @@ public class MediaController {
         return mediaInfos;
     }
 
-    public MediaInformation getMediaInfoOfFile(String url){
+    public MediaInformation getMediaInfoOfFile(String url) {
         return fileController.getInfoFromImage(url);
     }
 
@@ -137,10 +136,20 @@ public class MediaController {
     public boolean createRepo(String location) {
         String urlDirectory = location + Common.childSlash + Common.metadataFolderName;
         File directory = new File(urlDirectory);
-        if (!directory.exists()) {
+        String[] strIcs = getSplitLocationByIcs(location);
+        if (strIcs != null) {
+            File directoryExist = new File(strIcs[0] + Common.childSlash + Common.metadataFolderName + strIcs[1]);
+
+            try {
+                Files.move(directoryExist.toPath(), directory.toPath());
+                return true;
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+                return directory.mkdir();
+            }
+        } else {
             return directory.mkdir();
         }
-        return false;
     }
 
     /**
@@ -164,10 +173,7 @@ public class MediaController {
     public boolean saveMetadata(MediaInformation information) {
         String strCurrentDate = new Date().toString();
 
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
-        LocalDateTime now = LocalDateTime.now();
-
-        information.setModificationTime(new DateTimeUtil().getDateTimeConvertedFormat(dtf.format(now),"yyyy/MM/dd HH:mm:ss","yyyy:MM:dd HH:mm:ss"));
+        information.setModificationTime(new DateTimeUtil().convertDateTimeFormat(strCurrentDate, "yyyy:MM:dd HH:mm:ss"));
         String[] str = getSplitLocationByIcs(information.getLocation());
         String[] foldersUnderIcs = str[1].replace(Common.childSlash, ":").split(":");
         String urlDirectory = str[0] + Common.childSlash + Common.metadataFolderName;
@@ -198,7 +204,7 @@ public class MediaController {
      */
     public boolean searchAndFix(MediaInformation mediaInformation) {
         String fullPathOfFileSearched = fileSearchEngine.searchFile(mediaInformation.getName(), mediaInformation.getCheckSum());
-      //  System.out.println(fullPathOfFileSearched);
+        //  System.out.println(fullPathOfFileSearched);
         File sourceFile = new File(fullPathOfFileSearched);
         File createdFile = new File(getFullPath(mediaInformation));
         try {
@@ -218,7 +224,7 @@ public class MediaController {
         mediaInfosSearching.put(fullPath, list);
     }
 
-    public String getFullPath(MediaInformation mediaInformation){
+    public String getFullPath(MediaInformation mediaInformation) {
         return mediaInformation.getLocation() + Common.childSlash + mediaInformation.getName();
     }
 
@@ -249,11 +255,11 @@ public class MediaController {
     /**
      * whether .ics directory exist in folder or not
      *
-     * @param path current selected folder
+     * @param location current selected folder
      * @return if exist, true
      */
-    public String[] getSplitLocationByIcs(String path) {
-        String first = path;
+    public String[] getSplitLocationByIcs(String location) {
+        String first = location;
         String second = "";
         String last = "";
         do {
@@ -298,19 +304,13 @@ public class MediaController {
      * @return if exist, true
      */
     public boolean existMetadata(MediaInformation information) {
-        String first = information.getLocation();
-        String second = "";
-        String last = "";
-        do {
-            File f = new File(first + Common.childSlash + Common.metadataFolderName + second + Common.childSlash + information.getName() + "." + Common.extensionsText);
+        String[] strSplit = getSplitLocationByIcs(information.getLocation());
+        if (strSplit != null) {
+            File f = new File(strSplit[0] + Common.childSlash + Common.metadataFolderName + strSplit[1] + Common.childSlash + information.getName() + "." + Common.extensionsText);
             if (f.exists() && !f.isDirectory()) {
                 return true;
             }
-            String[] strSplit = splitLocationToTwoPartBySlash(first);
-            first = strSplit[0];
-            second = strSplit[1] + second;
-            last = strSplit[1];
-        } while (!last.isEmpty());
+        }
         return false;
     }
 
@@ -347,12 +347,13 @@ public class MediaController {
     /**
      * get file list of specific extensions
      *
-     * @param files       all files of various extensions
+     * @param location    specific path
      * @param extensions1 specific extensions
      * @param extensions2 specific extensions
      * @return matching files list
      */
-    private ArrayList<String> getFileListFiltered(File[] files, String[] extensions1, String[] extensions2) {
+    private ArrayList<String> getFileListFiltered(String location, String[] extensions1, String[] extensions2) {
+        File[] files = new File(location).listFiles();
         List<String> list1 = Arrays.asList(extensions1);
         List<String> list2 = Arrays.asList(extensions2);
         ArrayList<String> filesInLocation = new ArrayList<>();
@@ -360,7 +361,7 @@ public class MediaController {
             for (int i = 0; i < files.length; i++) {
                 String fileName = files[i].getName();
                 if (files[i].isFile()) {
-                    String extension = fileName.substring(fileName.indexOf(".") + 1);
+                    String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
                     //  if (list1.contains(extension) || list2.contains(extension)) {
                     filesInLocation.add(fileName);
                     //    }
