@@ -1,7 +1,7 @@
 package mcs;
 
 public class Common {
-    public static String appName = "Image Comment System" ;
+    public static String appName = "Image Comment System";
     public static String version = "0.9.9.5";
     public static String[] sortTypes = {"Date", "Size", "Type"};
     public static String[] extensionsImage = {"bmp", "jpg", "png"};
@@ -18,9 +18,12 @@ public class Common {
     public static double iconHeight = 15;
     public static double iconWidth = 15;
     public static int locationLength = 30;
+    public static int editTextLength = 8000;
 
     public static String aboutString = "Thanks for your running";
     public static String messageForNotChecksum = "Please restore this file";
+    public static String messageForLongUrl = "Too long url. Input not large than " + editTextLength;
+    public static String messageForLongDescription = "Too long description. Input not large than " + editTextLength;
     public static String pathImageMagicK = "C:/Program Files/ImageMagick-7.1.1-Q16-HDRI/magick.exe";
     public static String pathVlc = "C:/Program Files/VideoLAN/VLC/vlc.exe";
 

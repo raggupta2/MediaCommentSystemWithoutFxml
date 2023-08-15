@@ -254,6 +254,7 @@ public class ImageManagement {
         saveMetaData.setOnMouseClicked(event -> {
             selectedInfo.setModifier(currentUser.getName());
             selectedInfo.setDescription(description.getText());
+            selectedInfo.setGoogleMapUrl(googleMapUrl.getText());
             selectedInfo.setLatitude(latitude.getText());
             selectedInfo.setLongitude(longitude.getText());
             boolean isSaved = mediaController.saveMetadata(selectedInfo);
@@ -336,6 +337,29 @@ public class ImageManagement {
         checksum = component.drawTextAndTextfield(topLeftPane, "Checksum : ", "", false);
         imageView = component.drawImage("");
         description = component.drawTextArea("");
+
+        googleMapUrl.textProperty().addListener((observableValue, s, t1) -> {
+         //     System.out.println(googleMapUrl.getText().length());
+            if (googleMapUrl.getText().length() > Common.editTextLength) {
+                String str1 = googleMapUrl.getText().substring(0, Common.editTextLength);
+                googleMapUrl.setText(str1);
+                appearError(Common.messageForLongUrl);
+            } else {
+                disappearError();
+            }
+         //     System.out.println(googleMapUrl.getText().length());
+        });
+        description.textProperty().addListener((observableValue, s, t1) -> {
+            //    System.out.println(description.getText().length());
+            if (description.getText().length() > Common.editTextLength) {
+                String str1 = description.getText().substring(0, Common.editTextLength);
+                description.setText(str1);
+                appearError(Common.messageForLongDescription);
+            } else {
+                disappearError();
+            }
+            //    System.out.println(description.getText().length());
+        });
 
         VBox vBox = new VBox();
         vBox.getChildren().addAll(component.drawText("Description"), description);
@@ -441,9 +465,7 @@ public class ImageManagement {
      * empty content of detail pane
      */
     private void emptyDetail() {
-        if (topLeftBox.getChildren().get(0) instanceof Text) {
-            topLeftBox.getChildren().remove(0);
-        }
+        disappearError();
         lastModifier.setText("");
         latitude.setText("");
         longitude.setText("");
@@ -469,10 +491,7 @@ public class ImageManagement {
             delMetaData.setDisable(mediaController.existFile(mediaController.getFullPath(mediaInformation)));
         }
         if (mediaController.existFile(mediaController.getFullPath(mediaInformation)) && !mediaController.isEqualChecksum(mediaInformation)) {
-            Text text = new Text(Common.messageForNotChecksum);
-            text.setFill(Color.rgb(255, 0, 0));
-            //   text.setFont(new Font(20));
-            topLeftBox.getChildren().add(0, text);
+            appearError(Common.messageForNotChecksum);
         }
         lastModifier.setText(mediaInformation.getModifier());
         latitude.setText(mediaInformation.getLatitude());
@@ -503,7 +522,7 @@ public class ImageManagement {
             @Override
             public void body() {
                 if (selectedFilePath == null) {
-                    drawError("The Temp directory does not exist");
+                    drawErrorPane("The Temp directory does not exist");
                 } else {
                     imageView.setImage(image);
                     imageView.setCursor(Cursor.HAND);
@@ -553,13 +572,26 @@ public class ImageManagement {
         }
     }
 
+    private void appearError(String err) {
+        Text text = new Text(err);
+        text.setFill(Color.rgb(255, 0, 0));
+        //   text.setFont(new Font(20));
+        topLeftBox.getChildren().add(0, text);
+    }
+
+    private void disappearError() {
+        if (topLeftBox.getChildren().get(0) instanceof Text) {
+            topLeftBox.getChildren().remove(0);
+        }
+    }
+
 
     /**
      * draw error pane
      *
      * @param str string to show
      */
-    private void drawError(String str) {
+    private void drawErrorPane(String str) {
         mainPane.getChildren().clear();
         VBox box = new VBox();
         box.setSpacing(30);
