@@ -375,7 +375,7 @@ public class ImageManagement {
                 googleMapUrl.setText(str1);
                 appearError(Common.messageForLongUrl);
             } else {
-                disappearError();
+                disappearError(Common.messageForLongUrl);
             }
             //     System.out.println(googleMapUrl.getText().length());
         });
@@ -386,7 +386,7 @@ public class ImageManagement {
                 description.setText(str1);
                 appearError(Common.messageForLongDescription);
             } else {
-                disappearError();
+                disappearError(Common.messageForLongDescription);
             }
             //    System.out.println(description.getText().length());
         });
@@ -483,7 +483,9 @@ public class ImageManagement {
      * empty content of detail pane
      */
     private void emptyDetail() {
-        disappearError();
+        disappearError(Common.messageForNotChecksum);
+        disappearError(Common.messageForLongUrl);
+        disappearError(Common.messageForLongDescription);
         lastModifier.setText("");
         latitude.setText("");
         longitude.setText("");
@@ -591,15 +593,18 @@ public class ImageManagement {
     }
 
     private void appearError(String err) {
-        Text text = new Text(err);
-        text.setFill(Color.rgb(255, 0, 0));
+        Label text = new Label(err);
+        text.setTextFill(Color.rgb(255, 0, 0));
         //   text.setFont(new Font(20));
         topLeftBox.getChildren().add(0, text);
     }
 
-    private void disappearError() {
-        if (topLeftBox.getChildren().get(0) instanceof Text) {
-            topLeftBox.getChildren().remove(0);
+    private void disappearError(String err) {
+        for (int i = 0; i < topLeftBox.getChildren().size(); i++) {
+            if (topLeftBox.getChildren().get(i) instanceof Label && ((Label) topLeftBox.getChildren().get(i)).getText().equals(err)) {
+                topLeftBox.getChildren().remove(i);
+                break;
+            }
         }
     }
 
