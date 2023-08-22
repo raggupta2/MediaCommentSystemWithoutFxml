@@ -241,7 +241,7 @@ public class ImageManagement {
             if (isCreated) {
                 createRepo.setDisable(mediaController.existIcs(openedLocation));
                 saveMetaData.setDisable(mediaController.getSplitLocationByIcs(openedLocation) == null);
-                updateList(openedLocation);
+             //   updateList(openedLocation);
             }
         });
 
