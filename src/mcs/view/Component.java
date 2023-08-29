@@ -90,14 +90,6 @@ public class Component {
     public TextField drawTextAndTextfield(GridPane gridPane, String str1, String str2, boolean isEditable) {
         Text text1 = new Text(str1);
         TextField text2 = new TextField(str2);
-        text2.textProperty().addListener((observableValue, s, t1) -> {
-            //      System.out.println(text2.getText().length());
-            if (text2.getText().length() > 8000) {
-                String str = text2.getText().substring(0, 8000);
-                text2.setText(str);
-            }
-            //      System.out.println(text2.getText().length());
-        });
         text1.setFont(new Font(12));
         text2.setFont(new Font(15));
         text2.setEditable(isEditable);
@@ -118,16 +110,8 @@ public class Component {
      * @return created textfield
      */
     public TextArea drawTextArea(String str) {
-        TextArea t = new TextArea(str);
-        t.textProperty().addListener((observableValue, s, t1) -> {
-            //     System.out.println(t.getText().length());
-            if (t.getText().length() > 8000) {
-                String str1 = t.getText().substring(0, 8000);
-                t.setText(str1);
-            }
-            //    System.out.println(t.getText().length());
-        });
-        return t;
+        TextArea textArea = new TextArea(str);
+        return textArea;
     }
 
     /**

@@ -10,6 +10,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -240,7 +241,7 @@ public class ImageManagement {
             if (isCreated) {
                 createRepo.setDisable(mediaController.existIcs(openedLocation));
                 saveMetaData.setDisable(mediaController.getSplitLocationByIcs(openedLocation) == null);
-                updateList(openedLocation);
+             //   updateList(openedLocation);
             }
         });
 
@@ -254,6 +255,7 @@ public class ImageManagement {
         saveMetaData.setOnMouseClicked(event -> {
             selectedInfo.setModifier(currentUser.getName());
             selectedInfo.setDescription(description.getText());
+            selectedInfo.setGoogleMapUrl(googleMapUrl.getText());
             selectedInfo.setLatitude(latitude.getText());
             selectedInfo.setLongitude(longitude.getText());
             boolean isSaved = mediaController.saveMetadata(selectedInfo);
@@ -307,6 +309,35 @@ public class ImageManagement {
         listPane.setMaxWidth(400);
         listView.setPrefHeight(10000);
         listAndDetailPane.setPadding(new Insets(0, 20, 20, 20));
+
+
+        listView.setOnKeyPressed(keyEvent -> {
+            int index = listView.getSelectionModel().getSelectedIndex();
+            if ((keyEvent.getCode() == KeyCode.UP || keyEvent.getCode() == KeyCode.DOWN) && index < mediaInfos.size()) {
+                selectedInfo = mediaInfos.get(index);
+                if (currentUser.getRole() == 0) {
+                    delMetaData.setDisable(mediaController.existFile(mediaController.getFullPath(selectedInfo)));
+                }
+                updateDetail(selectedInfo);
+            } else if (keyEvent.getCode() == KeyCode.ENTER && index >= mediaInfos.size()) {
+                openedLocation += (openedLocation.endsWith(Common.childSlash) ? "" : Common.childSlash) + directories.get(index - mediaInfos.size());
+                gotoNewLocation();
+            }
+        });
+
+        listView.setOnMouseClicked(event -> {
+            int index = listView.getSelectionModel().getSelectedIndex();
+            if (index < mediaInfos.size()) {
+                selectedInfo = mediaInfos.get(index);
+                if (currentUser.getRole() == 0) {
+                    delMetaData.setDisable(mediaController.existFile(mediaController.getFullPath(selectedInfo)));
+                }
+                updateDetail(selectedInfo);
+            } else {
+                openedLocation += (openedLocation.endsWith(Common.childSlash) ? "" : Common.childSlash) + directories.get(index - mediaInfos.size());
+                gotoNewLocation();
+            }
+        });
     }
 
     /**
@@ -336,6 +367,29 @@ public class ImageManagement {
         checksum = component.drawTextAndTextfield(topLeftPane, "Checksum : ", "", false);
         imageView = component.drawImage("");
         description = component.drawTextArea("");
+
+        googleMapUrl.textProperty().addListener((observableValue, s, t1) -> {
+            //     System.out.println(googleMapUrl.getText().length());
+            if (googleMapUrl.getText().length() > Common.editTextLength) {
+                String str1 = googleMapUrl.getText().substring(0, Common.editTextLength);
+                googleMapUrl.setText(str1);
+                appearError(Common.messageForLongUrl);
+            } else {
+                disappearError(Common.messageForLongUrl);
+            }
+            //     System.out.println(googleMapUrl.getText().length());
+        });
+        description.textProperty().addListener((observableValue, s, t1) -> {
+            //    System.out.println(description.getText().length());
+            if (description.getText().length() > Common.editTextLength) {
+                String str1 = description.getText().substring(0, Common.editTextLength);
+                description.setText(str1);
+                appearError(Common.messageForLongDescription);
+            } else {
+                disappearError(Common.messageForLongDescription);
+            }
+            //    System.out.println(description.getText().length());
+        });
 
         VBox vBox = new VBox();
         vBox.getChildren().addAll(component.drawText("Description"), description);
@@ -379,14 +433,6 @@ public class ImageManagement {
                     MediaInformation mediaInformation = mediaInfos.get(i);
                     StackPane item = component.drawItem(mediaInformation, selectedSortType);
                     stackPanes[i] = item;
-                    int index = i;
-                    item.setOnMouseClicked(event -> {
-                        selectedInfo = mediaInformation;
-                        if (currentUser.getRole() == 0) {
-                            delMetaData.setDisable(mediaController.existFile(mediaController.getFullPath(mediaInformation)));
-                        }
-                        updateDetail(mediaInfos.get(index));
-                    });
                 }
 
                 for (int i = 0; i < directories.size(); i++) {
@@ -400,10 +446,6 @@ public class ImageManagement {
                     stackPane.getChildren().add(text);
                     stackPanes[mediaInfos.size() + i] = stackPane;
                     StackPane.setMargin(text, new Insets(0, 0, 0, 20));
-                    stackPane.setOnMouseClicked(event -> {
-                        openedLocation += (openedLocation.endsWith(Common.childSlash) ? "" : Common.childSlash) + directory;
-                        gotoNewLocation();
-                    });
                 }
             }
 
@@ -441,9 +483,9 @@ public class ImageManagement {
      * empty content of detail pane
      */
     private void emptyDetail() {
-        if (topLeftBox.getChildren().get(0) instanceof Text) {
-            topLeftBox.getChildren().remove(0);
-        }
+        disappearError(Common.messageForNotChecksum);
+        disappearError(Common.messageForLongUrl);
+        disappearError(Common.messageForLongDescription);
         lastModifier.setText("");
         latitude.setText("");
         longitude.setText("");
@@ -469,10 +511,7 @@ public class ImageManagement {
             delMetaData.setDisable(mediaController.existFile(mediaController.getFullPath(mediaInformation)));
         }
         if (mediaController.existFile(mediaController.getFullPath(mediaInformation)) && !mediaController.isEqualChecksum(mediaInformation)) {
-            Text text = new Text(Common.messageForNotChecksum);
-            text.setFill(Color.rgb(255, 0, 0));
-            //   text.setFont(new Font(20));
-            topLeftBox.getChildren().add(0, text);
+            appearError(Common.messageForNotChecksum);
         }
         lastModifier.setText(mediaInformation.getModifier());
         latitude.setText(mediaInformation.getLatitude());
@@ -503,7 +542,7 @@ public class ImageManagement {
             @Override
             public void body() {
                 if (selectedFilePath == null) {
-                    drawError("The Temp directory does not exist");
+                    drawErrorPane("The Temp directory does not exist");
                 } else {
                     imageView.setImage(image);
                     imageView.setCursor(Cursor.HAND);
@@ -553,13 +592,29 @@ public class ImageManagement {
         }
     }
 
+    private void appearError(String err) {
+        Label text = new Label(err);
+        text.setTextFill(Color.rgb(255, 0, 0));
+        //   text.setFont(new Font(20));
+        topLeftBox.getChildren().add(0, text);
+    }
+
+    private void disappearError(String err) {
+        for (int i = 0; i < topLeftBox.getChildren().size(); i++) {
+            if (topLeftBox.getChildren().get(i) instanceof Label && ((Label) topLeftBox.getChildren().get(i)).getText().equals(err)) {
+                topLeftBox.getChildren().remove(i);
+                break;
+            }
+        }
+    }
+
 
     /**
      * draw error pane
      *
      * @param str string to show
      */
-    private void drawError(String str) {
+    private void drawErrorPane(String str) {
         mainPane.getChildren().clear();
         VBox box = new VBox();
         box.setSpacing(30);

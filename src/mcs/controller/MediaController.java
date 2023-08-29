@@ -115,9 +115,12 @@ public class MediaController {
         ArrayList<String> directories = new ArrayList<>();
         File[] files = new File(location).listFiles();
         for (int i = 0; i < files.length; i++) {
-            if (files[i].isDirectory() && !files[i].getName().equals(Common.metadataFolderName)) {
+            if (files[i].isDirectory() && !files[i].isHidden()) {
                 directories.add(files[i].getName());
             }
+           /* if(files[i].isHidden()){
+                System.out.println(files[i]);
+            }*/
 
         }
         return directories;
@@ -132,6 +135,13 @@ public class MediaController {
     public boolean createRepo(String location) {
         String urlDirectory = location + Common.childSlash + Common.metadataFolderName;
         File directory = new File(urlDirectory);
+        try {
+            String[] cmd = {"attrib", "+H", directory.getAbsolutePath()};
+            Runtime.getRuntime().exec(cmd);
+        } catch (IOException e) {
+            //throw new RuntimeException(e);
+            System.out.println("hide:" + e.getMessage());
+        }
         String[] strIcs = getSplitLocationByIcs(location);
         if (strIcs != null) {
             File directoryExist = new File(strIcs[0] + Common.childSlash + Common.metadataFolderName + strIcs[1]);
@@ -140,7 +150,7 @@ public class MediaController {
                 Files.move(directoryExist.toPath(), directory.toPath());
                 return true;
             } catch (IOException e) {
-                System.out.println(e.getMessage());
+                System.out.println("move:" + e.getMessage());
                 return directory.mkdir();
             }
         } else {
