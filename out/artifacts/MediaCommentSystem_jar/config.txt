@@ -1,0 +1,5 @@
+{"name":"admin","password":"admin","role":0}
+{"name":"a","password":"a","role":1}
+{"name":"d","password":"d","role":1}
+{"name":"b","password":"b","role":1}
+{"name":"r","password":"r","role":1}
